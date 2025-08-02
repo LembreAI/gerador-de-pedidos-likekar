@@ -3,17 +3,18 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Search, MoreVertical, Edit, Eye, Filter } from "lucide-react";
+import { Plus, Search, MoreVertical, Edit, Filter, Trash2 } from "lucide-react";
 import { useInstaladores } from "@/contexts/InstalladoresContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { InstaladorForm } from "@/components/forms/InstaladorForm";
 import { useState } from "react";
 
 export default function Installers() {
-  const { instaladores, loading } = useInstaladores();
+  const { instaladores, loading, deleteInstallador } = useInstaladores();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [editingInstallador, setEditingInstallador] = useState(null);
 
   const filteredInstaladores = instaladores.filter(instalador =>
     instalador.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -27,6 +28,22 @@ export default function Installers() {
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const handleEdit = (instalador) => {
+    setEditingInstallador(instalador);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: string, nome: string) => {
+    if (window.confirm(`Tem certeza que deseja excluir o instalador ${nome}?`)) {
+      await deleteInstallador(id);
+    }
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingInstallador(null);
   };
 
   if (!user) {
@@ -135,11 +152,23 @@ export default function Installers() {
                        </div>
                        <div className="w-32 text-right">
                          <div className="flex justify-end gap-1">
-                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Editar">
+                           <Button 
+                             variant="ghost" 
+                             size="sm" 
+                             className="h-8 w-8 p-0" 
+                             title="Editar"
+                             onClick={() => handleEdit(instalador)}
+                           >
                              <Edit className="h-4 w-4" />
                            </Button>
-                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Excluir">
-                             <MoreVertical className="h-4 w-4" />
+                           <Button 
+                             variant="ghost" 
+                             size="sm" 
+                             className="h-8 w-8 p-0 text-destructive hover:text-destructive" 
+                             title="Excluir"
+                             onClick={() => handleDelete(instalador.id, instalador.nome)}
+                           >
+                             <Trash2 className="h-4 w-4" />
                            </Button>
                          </div>
                        </div>
@@ -152,7 +181,11 @@ export default function Installers() {
         </div>
       </Card>
       
-      <InstaladorForm open={showForm} onOpenChange={setShowForm} />
+      <InstaladorForm 
+        open={showForm} 
+        onOpenChange={handleCloseForm}
+        instalador={editingInstallador}
+      />
     </div>
   );
 }

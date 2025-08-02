@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,17 +17,34 @@ import { Loader2 } from "lucide-react";
 interface InstaladorFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  instalador?: any;
 }
 
-export function InstaladorForm({ open, onOpenChange }: InstaladorFormProps) {
+export function InstaladorForm({ open, onOpenChange, instalador }: InstaladorFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     nome: "",
     comissao: 5,
   });
 
-  const { createInstallador } = useInstaladores();
+  const { createInstallador, updateInstallador } = useInstaladores();
   const { toast } = useToast();
+
+  
+  // Update form data when instalador prop changes
+  useEffect(() => {
+    if (instalador) {
+      setFormData({
+        nome: instalador.nome || "",
+        comissao: instalador.comissao || 5,
+      });
+    } else {
+      setFormData({
+        nome: "",
+        comissao: 5,
+      });
+    }
+  }, [instalador]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -51,25 +68,35 @@ export function InstaladorForm({ open, onOpenChange }: InstaladorFormProps) {
 
     setIsLoading(true);
     try {
-      const result = await createInstallador({
-        ...formData,
-        email: "",
-        telefone: "",
-        especialidade: "",
-        cidade: "",
-        estado: "",
-        ativo: true,
-      });
-
-      if (result) {
-        setFormData({
-          nome: "",
-          comissao: 5,
+      if (instalador) {
+        // Editing existing instalador
+        const success = await updateInstallador(instalador.id, {
+          nome: formData.nome,
+          comissao: formData.comissao,
         });
-        onOpenChange(false);
+
+        if (success) {
+          onOpenChange(false);
+        }
+      } else {
+        // Creating new instalador
+        const result = await createInstallador({
+          nome: formData.nome,
+          email: `${formData.nome.toLowerCase().replace(/\s+/g, '.')}@exemplo.com`,
+          comissao: formData.comissao,
+          ativo: true,
+        });
+
+        if (result) {
+          setFormData({
+            nome: "",
+            comissao: 5,
+          });
+          onOpenChange(false);
+        }
       }
     } catch (error) {
-      console.error("Erro ao criar instalador:", error);
+      console.error("Erro ao salvar instalador:", error);
     } finally {
       setIsLoading(false);
     }
@@ -79,9 +106,11 @@ export function InstaladorForm({ open, onOpenChange }: InstaladorFormProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Adicionar Instalador</DialogTitle>
+          <DialogTitle>
+            {instalador ? 'Editar Instalador' : 'Adicionar Instalador'}
+          </DialogTitle>
           <DialogDescription>
-            Preencha as informações do novo instalador.
+            {instalador ? 'Edite as informações do instalador.' : 'Preencha as informações do novo instalador.'}
           </DialogDescription>
         </DialogHeader>
         
@@ -124,7 +153,7 @@ export function InstaladorForm({ open, onOpenChange }: InstaladorFormProps) {
             </Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Criar Instalador
+              {instalador ? 'Salvar Alterações' : 'Criar Instalador'}
             </Button>
           </DialogFooter>
         </form>
