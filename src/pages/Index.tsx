@@ -98,8 +98,20 @@ const Index = () => {
       // Salvar pedido no Supabase (incluindo upload do PDF)
       await saveOrderToSupabase(orderData, blob, saveAndGoToOrders);
 
-      // Não fazer download aqui pois o PDF está salvo no storage
-      // O usuário pode baixar pela página de pedidos
+      // Download automático do PDF se não for redirecionamento
+      if (!saveAndGoToOrders) {
+        console.log('⬇️ Iniciando download automático do PDF...');
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Pedido_LikeKar_${orderData.pedido.numero || 'novo'}.pdf`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+        console.log('✅ Download automático concluído');
+      }
 
       setCompletedSteps([...completedSteps, 3]);
       
