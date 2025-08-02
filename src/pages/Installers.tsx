@@ -8,54 +8,41 @@ import { useInstaladores } from "@/contexts/InstalladoresContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { InstaladorForm } from "@/components/forms/InstaladorForm";
 import { useState } from "react";
-
 export default function Installers() {
-  const { instaladores, loading, deleteInstallador } = useInstaladores();
-  const { user } = useAuth();
+  const {
+    instaladores,
+    loading,
+    deleteInstallador
+  } = useInstaladores();
+  const {
+    user
+  } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingInstallador, setEditingInstallador] = useState(null);
-
-  const filteredInstaladores = instaladores.filter(instalador =>
-    instalador.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    instalador.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (instalador.cidade && instalador.cidade.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
+  const filteredInstaladores = instaladores.filter(instalador => instalador.nome.toLowerCase().includes(searchTerm.toLowerCase()) || instalador.email.toLowerCase().includes(searchTerm.toLowerCase()) || instalador.cidade && instalador.cidade.toLowerCase().includes(searchTerm.toLowerCase()));
   const getInitials = (nome: string) => {
-    return nome.split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+    return nome.split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2);
   };
-
-  const handleEdit = (instalador) => {
+  const handleEdit = instalador => {
     setEditingInstallador(instalador);
     setShowForm(true);
   };
-
   const handleDelete = async (id: string, nome: string) => {
     if (window.confirm(`Tem certeza que deseja excluir o instalador ${nome}?`)) {
       await deleteInstallador(id);
     }
   };
-
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingInstallador(null);
   };
-
   if (!user) {
-    return (
-      <div className="flex items-center justify-center h-64">
+    return <div className="flex items-center justify-center h-64">
         <p className="text-muted-foreground">Faça login para ver os instaladores</p>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -75,17 +62,9 @@ export default function Installers() {
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar instaladores..."
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+            <Input placeholder="Buscar instaladores..." className="pl-10" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
           </div>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Filtrar
-          </Button>
+          
         </div>
       </Card>
 
@@ -101,10 +80,11 @@ export default function Installers() {
               </div>
               
               <div className="divide-y">
-                {loading ? (
-                  // Loading skeleton
-                   Array.from({ length: 3 }).map((_, index) => (
-                     <div key={index} className="flex items-center p-4 hover:bg-muted/30">
+                {loading ?
+              // Loading skeleton
+              Array.from({
+                length: 3
+              }).map((_, index) => <div key={index} className="flex items-center p-4 hover:bg-muted/30">
                        <div className="flex-1">
                          <div className="flex items-center gap-3">
                            <Skeleton className="h-10 w-10 rounded-full" />
@@ -123,17 +103,11 @@ export default function Installers() {
                            <Skeleton className="h-8 w-8" />
                          </div>
                        </div>
-                     </div>
-                   ))
-                ) : filteredInstaladores.length === 0 ? (
-                  <div className="p-8 text-center">
+                     </div>) : filteredInstaladores.length === 0 ? <div className="p-8 text-center">
                     <p className="text-muted-foreground">
                       {searchTerm ? "Nenhum instalador encontrado" : "Nenhum instalador cadastrado"}
                     </p>
-                  </div>
-                ) : (
-                   filteredInstaladores.map((instalador) => (
-                     <div key={instalador.id} className="flex items-center p-4 hover:bg-muted/30 border-b">
+                  </div> : filteredInstaladores.map(instalador => <div key={instalador.id} className="flex items-center p-4 hover:bg-muted/30 border-b">
                        <div className="flex-1">
                          <div className="flex items-center gap-3">
                            <Avatar className="h-10 w-10 bg-muted">
@@ -152,40 +126,21 @@ export default function Installers() {
                        </div>
                        <div className="w-32 text-right">
                          <div className="flex justify-end gap-1">
-                           <Button 
-                             variant="ghost" 
-                             size="sm" 
-                             className="h-8 w-8 p-0" 
-                             title="Editar"
-                             onClick={() => handleEdit(instalador)}
-                           >
+                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Editar" onClick={() => handleEdit(instalador)}>
                              <Edit className="h-4 w-4" />
                            </Button>
-                           <Button 
-                             variant="ghost" 
-                             size="sm" 
-                             className="h-8 w-8 p-0 text-destructive hover:text-destructive" 
-                             title="Excluir"
-                             onClick={() => handleDelete(instalador.id, instalador.nome)}
-                           >
+                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" title="Excluir" onClick={() => handleDelete(instalador.id, instalador.nome)}>
                              <Trash2 className="h-4 w-4" />
                            </Button>
                          </div>
                        </div>
-                     </div>
-                   ))
-                )}
+                     </div>)}
               </div>
             </div>
           </div>
         </div>
       </Card>
       
-      <InstaladorForm 
-        open={showForm} 
-        onOpenChange={handleCloseForm}
-        instalador={editingInstallador}
-      />
-    </div>
-  );
+      <InstaladorForm open={showForm} onOpenChange={handleCloseForm} instalador={editingInstallador} />
+    </div>;
 }
