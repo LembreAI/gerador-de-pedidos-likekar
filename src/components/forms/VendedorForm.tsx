@@ -23,8 +23,6 @@ export function VendedorForm({ open, onOpenChange }: VendedorFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     nome: "",
-    email: "",
-    telefone: "",
     comissao: 5,
   });
 
@@ -42,10 +40,10 @@ export function VendedorForm({ open, onOpenChange }: VendedorFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.nome.trim() || !formData.email.trim()) {
+    if (!formData.nome.trim()) {
       toast({
-        title: "Campos obrigatórios",
-        description: "Nome e email são obrigatórios.",
+        title: "Campo obrigatório",
+        description: "Nome é obrigatório.",
         variant: "destructive",
       });
       return;
@@ -55,6 +53,8 @@ export function VendedorForm({ open, onOpenChange }: VendedorFormProps) {
     try {
       const result = await createVendedor({
         ...formData,
+        email: "",
+        telefone: "",
         vendas_total: 0,
         ativo: true,
       });
@@ -62,8 +62,6 @@ export function VendedorForm({ open, onOpenChange }: VendedorFormProps) {
       if (result) {
         setFormData({
           nome: "",
-          email: "",
-          telefone: "",
           comissao: 5,
         });
         onOpenChange(false);
@@ -95,30 +93,6 @@ export function VendedorForm({ open, onOpenChange }: VendedorFormProps) {
               onChange={handleInputChange}
               placeholder="Nome completo"
               required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              placeholder="email@exemplo.com"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="telefone">Telefone</Label>
-            <Input
-              id="telefone"
-              name="telefone"
-              value={formData.telefone}
-              onChange={handleInputChange}
-              placeholder="(11) 99999-9999"
             />
           </div>
 

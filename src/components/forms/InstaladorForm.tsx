@@ -23,11 +23,7 @@ export function InstaladorForm({ open, onOpenChange }: InstaladorFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     nome: "",
-    email: "",
-    telefone: "",
-    especialidade: "",
-    cidade: "",
-    estado: "",
+    comissao: 5,
   });
 
   const { createInstallador } = useInstaladores();
@@ -44,10 +40,10 @@ export function InstaladorForm({ open, onOpenChange }: InstaladorFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.nome.trim() || !formData.email.trim()) {
+    if (!formData.nome.trim()) {
       toast({
-        title: "Campos obrigatórios",
-        description: "Nome e email são obrigatórios.",
+        title: "Campo obrigatório",
+        description: "Nome é obrigatório.",
         variant: "destructive",
       });
       return;
@@ -57,17 +53,18 @@ export function InstaladorForm({ open, onOpenChange }: InstaladorFormProps) {
     try {
       const result = await createInstallador({
         ...formData,
+        email: "",
+        telefone: "",
+        especialidade: "",
+        cidade: "",
+        estado: "",
         ativo: true,
       });
 
       if (result) {
         setFormData({
           nome: "",
-          email: "",
-          telefone: "",
-          especialidade: "",
-          cidade: "",
-          estado: "",
+          comissao: 5,
         });
         onOpenChange(false);
       }
@@ -102,63 +99,18 @@ export function InstaladorForm({ open, onOpenChange }: InstaladorFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
+            <Label htmlFor="comissao">Comissão (%)</Label>
             <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
+              id="comissao"
+              name="comissao"
+              type="number"
+              step="0.1"
+              min="0"
+              max="100"
+              value={formData.comissao}
               onChange={handleInputChange}
-              placeholder="email@exemplo.com"
-              required
+              placeholder="5.0"
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="telefone">Telefone</Label>
-            <Input
-              id="telefone"
-              name="telefone"
-              value={formData.telefone}
-              onChange={handleInputChange}
-              placeholder="(11) 99999-9999"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="especialidade">Especialidade</Label>
-            <Input
-              id="especialidade"
-              name="especialidade"
-              value={formData.especialidade}
-              onChange={handleInputChange}
-              placeholder="Alarmes, Som automotivo, etc."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="cidade">Cidade</Label>
-              <Input
-                id="cidade"
-                name="cidade"
-                value={formData.cidade}
-                onChange={handleInputChange}
-                placeholder="São Paulo"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="estado">Estado</Label>
-              <Input
-                id="estado"
-                name="estado"
-                value={formData.estado}
-                onChange={handleInputChange}
-                placeholder="SP"
-                maxLength={2}
-              />
-            </div>
           </div>
 
           <DialogFooter>
