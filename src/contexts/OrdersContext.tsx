@@ -1,73 +1,75 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Order } from '@/types/order';
+import { supabase } from '@/integrations/supabase/client';
 
 interface OrdersContextType {
-  orders: Order[];
-  addOrder: (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>) => Order;
-  updateOrder: (id: string, updates: Partial<Order>) => void;
-  deleteOrder: (id: string) => void;
-  getOrder: (id: string) => Order | undefined;
+  orders: any[];
+  loading: boolean;
+  getOrderWithDetails: (id: string) => any | undefined;
+  deleteOrder: (id: string) => Promise<void>;
 }
 
 const OrdersContext = createContext<OrdersContextType | undefined>(undefined);
 
 export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Load orders from localStorage on mount
+  // Load orders from Supabase on mount
   useEffect(() => {
-    const savedOrders = localStorage.getItem('orders');
-    if (savedOrders) {
-      try {
-        setOrders(JSON.parse(savedOrders));
-      } catch (error) {
-        console.error('Error loading orders from localStorage:', error);
-      }
-    }
+    loadOrders();
   }, []);
 
-  // Save orders to localStorage whenever orders change
-  useEffect(() => {
-    localStorage.setItem('orders', JSON.stringify(orders));
-  }, [orders]);
+  const loadOrders = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('pedidos')
+        .select(`
+          *,
+          cliente:clientes(id, nome, telefone, email, endereco, cidade, estado, cep, cpf_cnpj),
+          veiculo:veiculos(id, marca, modelo, ano, placa, cor, chassi, combustivel),
+          vendedor:vendedores(id, nome, email, telefone),
+          instalador:instaladores(id, nome, email, telefone, especialidade),
+          produtos:produtos_pedido(*)
+        `)
+        .order('created_at', { ascending: false });
 
-  const addOrder = (orderData: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>): Order => {
-    const newOrder: Order = {
-      ...orderData,
-      id: `PED-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    setOrders(prev => [newOrder, ...prev]);
-    return newOrder;
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (error) {
+      console.error('Error loading orders:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const updateOrder = (id: string, updates: Partial<Order>) => {
-    setOrders(prev => 
-      prev.map(order => 
-        order.id === id 
-          ? { ...order, ...updates, updatedAt: new Date().toISOString() }
-          : order
-      )
-    );
-  };
-
-  const deleteOrder = (id: string) => {
-    setOrders(prev => prev.filter(order => order.id !== id));
-  };
-
-  const getOrder = (id: string) => {
+  const getOrderWithDetails = (id: string) => {
     return orders.find(order => order.id === id);
+  };
+
+  const deleteOrder = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('pedidos')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      // Remove from local state
+      setOrders(prev => prev.filter(order => order.id !== id));
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      throw error;
+    }
   };
 
   return (
     <OrdersContext.Provider value={{
       orders,
-      addOrder,
-      updateOrder,
-      deleteOrder,
-      getOrder
+      loading,
+      getOrderWithDetails,
+      deleteOrder
     }}>
       {children}
     </OrdersContext.Provider>

@@ -35,7 +35,7 @@ const Index = () => {
     vendedor: ""
   });
   const { toast } = useToast();
-  const { addOrder } = useOrders();
+  // Remover addOrder - funcionalidade movida para Supabase diretamente
   const { vendedores } = useVendedores();
   const { instaladores } = useInstaladores();
   const navigate = useNavigate();
@@ -94,18 +94,9 @@ const Index = () => {
       const pdfBytes = await generateLikeKarPDF(orderData);
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
 
-      // Salvar pedido no contexto
-      const newOrder = addOrder({
-        numero: extractedData.pedido.numero,
-        data: extractedData.pedido.data,
-        cliente: extractedData.cliente.nome,
-        carro: `${vehicleData.marca} ${vehicleData.modelo} ${vehicleData.ano}`,
-        valor: extractedData.totalPedido,
-        status: 'Pendente',
-        extractedData,
-        vehicleData,
-        pdfBlob: blob
-      });
+      // TODO: Implementar salvamento direto no Supabase
+      // Por enquanto, apenas gerar o PDF sem salvar
+      console.log('PDF gerado com sucesso');
 
       // Fazer download apenas se não estiver indo para página de pedidos
       if (!saveAndGoToOrders) {

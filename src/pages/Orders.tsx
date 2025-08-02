@@ -9,6 +9,7 @@ import { useOrders } from "@/contexts/OrdersContext";
 import { useToast } from "@/hooks/use-toast";
 import { generateLikeKarPDF } from "@/services/likeKarPDFGenerator";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 const getStatusColor = (status: string) => {
   switch (status) {
     case "Concluído":
@@ -24,13 +25,19 @@ const getStatusColor = (status: string) => {
 export default function Orders() {
   const {
     orders,
+    loading,
     deleteOrder
   } = useOrders();
   const {
     toast
   } = useToast();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const filteredOrders = orders.filter(order => order.cliente.toLowerCase().includes(searchTerm.toLowerCase()) || order.numero.toLowerCase().includes(searchTerm.toLowerCase()) || order.carro.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredOrders = orders.filter(order => 
+    order.cliente?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    order.id?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    `${order.veiculo?.marca} ${order.veiculo?.modelo}`.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   const handleDownloadPDF = async (order: any) => {
     try {
       if (order.pdfBlob) {
@@ -81,12 +88,20 @@ export default function Orders() {
       });
     }
   };
-  const handleDeleteOrder = (orderId: string) => {
-    deleteOrder(orderId);
-    toast({
-      title: "Pedido excluído",
-      description: "O pedido foi removido com sucesso."
-    });
+  const handleDeleteOrder = async (orderId: string) => {
+    try {
+      await deleteOrder(orderId);
+      toast({
+        title: "Pedido excluído",
+        description: "O pedido foi removido com sucesso."
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao excluir",
+        description: "Ocorreu um erro ao excluir o pedido.",
+        variant: "destructive"
+      });
+    }
   };
   return <div className="space-y-6">
       {/* Header */}
@@ -119,29 +134,57 @@ export default function Orders() {
                   <TableHead className="font-medium text-muted-foreground">Número</TableHead>
                   <TableHead className="font-medium text-muted-foreground">Data</TableHead>
                   <TableHead className="font-medium text-muted-foreground">Cliente</TableHead>
+                  <TableHead className="font-medium text-muted-foreground">Telefone</TableHead>
                   <TableHead className="font-medium text-muted-foreground">Carro</TableHead>
                   <TableHead className="text-right font-medium text-muted-foreground">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredOrders.length === 0 ? <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      Carregando pedidos...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredOrders.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       {orders.length === 0 ? "Nenhum pedido encontrado" : "Nenhum resultado para a busca"}
                     </TableCell>
-                  </TableRow> : filteredOrders.map(order => <TableRow key={order.id} className="hover:bg-muted/30 border-b">
+                  </TableRow>
+                ) : (
+                  filteredOrders.map(order => (
+                    <TableRow key={order.id} className="hover:bg-muted/30 border-b">
                       <TableCell className="w-12">
                         <input type="checkbox" className="w-4 h-4 rounded border border-input bg-background" />
                       </TableCell>
-                      <TableCell className="font-medium text-foreground">{order.numero}</TableCell>
-                      <TableCell className="text-muted-foreground">{order.data}</TableCell>
-                      <TableCell className="text-foreground">{order.cliente}</TableCell>
-                      <TableCell className="text-muted-foreground">{order.carro}</TableCell>
+                      <TableCell className="font-medium text-foreground">{order.id}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(order.created_at).toLocaleDateString('pt-BR')}
+                      </TableCell>
+                      <TableCell className="text-foreground">{order.cliente?.nome || 'N/A'}</TableCell>
+                      <TableCell className="text-muted-foreground">{order.cliente?.telefone || 'N/A'}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {order.veiculo ? `${order.veiculo.marca} ${order.veiculo.modelo} ${order.veiculo.ano}` : 'N/A'}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Ver detalhes">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0" 
+                            title="Ver cliente"
+                            onClick={() => navigate(`/cliente/${order.cliente?.id}`)}
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Editar">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0" 
+                            title="Editar cliente"
+                            onClick={() => navigate(`/cliente/${order.cliente?.id}/editar`)}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Baixar PDF" onClick={() => handleDownloadPDF(order)}>
@@ -157,7 +200,7 @@ export default function Orders() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Tem certeza que deseja excluir o pedido {order.numero}? Esta ação não pode ser desfeita.
+                                  Tem certeza que deseja excluir o pedido {order.id}? Esta ação não pode ser desfeita.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -170,7 +213,9 @@ export default function Orders() {
                           </AlertDialog>
                         </div>
                       </TableCell>
-                    </TableRow>)}
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>

@@ -1,0 +1,2 @@
+-- Migrar contexto de pedidos para usar Supabase
+-- Esta migration não altera estrutura, apenas documenta a mudança para usar as tabelas existentes

@@ -15,6 +15,8 @@ import Installers from "./pages/Installers";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import ClientDetails from "./pages/ClientDetails";
+import ClientEdit from "./pages/ClientEdit";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -34,6 +36,8 @@ const App = () => (
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                   <Route path="/pedidos" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+                  <Route path="/cliente/:id" element={<ProtectedRoute><ClientDetails /></ProtectedRoute>} />
+                  <Route path="/cliente/:id/editar" element={<ProtectedRoute><ClientEdit /></ProtectedRoute>} />
                   <Route path="/vendedores" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
                   <Route path="/instaladores" element={<ProtectedRoute><Installers /></ProtectedRoute>} />
                   <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
