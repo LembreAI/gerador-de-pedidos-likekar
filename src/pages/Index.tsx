@@ -9,6 +9,8 @@ import { FileUpload } from "@/components/upload/FileUpload";
 import { generateLikeKarPDF, PedidoData } from "@/services/likeKarPDFGenerator";
 import { useToast } from "@/hooks/use-toast";
 import { useOrders } from "@/contexts/OrdersContext";
+import { useVendedores } from "@/contexts/VendedoresContext";
+import { useInstaladores } from "@/contexts/InstalladoresContext";
 import { useNavigate } from "react-router-dom";
 
 // Definição dos passos
@@ -34,6 +36,8 @@ const Index = () => {
   });
   const { toast } = useToast();
   const { addOrder } = useOrders();
+  const { vendedores } = useVendedores();
+  const { instaladores } = useInstaladores();
   const navigate = useNavigate();
 
   const handleFileSelect = (file: File) => {
@@ -251,9 +255,11 @@ const Index = () => {
                       <SelectValue placeholder="Selecione o instalador" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Marcio">Marcio</SelectItem>
-                      <SelectItem value="João">João</SelectItem>
-                      <SelectItem value="Pedro">Pedro</SelectItem>
+                      {instaladores.map((instalador) => (
+                        <SelectItem key={instalador.id} value={instalador.nome}>
+                          {instalador.nome}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -264,9 +270,11 @@ const Index = () => {
                       <SelectValue placeholder="Selecione o vendedor" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Manuel Epifanio Mayta Cosme">Manuel Epifanio Mayta Cosme</SelectItem>
-                      <SelectItem value="Ana Silva">Ana Silva</SelectItem>
-                      <SelectItem value="Carlos Santos">Carlos Santos</SelectItem>
+                      {vendedores.map((vendedor) => (
+                        <SelectItem key={vendedor.id} value={vendedor.nome}>
+                          {vendedor.nome}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
