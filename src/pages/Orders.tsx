@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { generateLikeKarPDF, PedidoData } from "@/services/likeKarPDFGenerator";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 const getStatusColor = (status: string) => {
   switch (status) {
     case "Concluído":
@@ -200,7 +201,6 @@ export default function Orders() {
   const handleDownloadOrder = async (order: any) => {
     try {
       console.log('⬇️ Iniciando download do pedido:', order.id);
-      console.log('🔗 URL do PDF:', order.pdf_gerado_url);
       
       if (!order.pdf_gerado_url) {
         console.log('❌ PDF não encontrado para o pedido');
@@ -212,9 +212,33 @@ export default function Orders() {
         return;
       }
 
-      // Para URLs assinadas, usar fetch com headers apropriados
+      // Extrair o caminho do arquivo da URL existente
+      const urlParts = order.pdf_gerado_url.split('/');
+      const pathIndex = urlParts.findIndex(part => part === 'pdfs');
+      
+      if (pathIndex === -1 || pathIndex + 1 >= urlParts.length) {
+        throw new Error('URL do PDF inválida');
+      }
+
+      // Pegar o caminho completo após /pdfs/
+      const filePath = urlParts.slice(pathIndex + 1).join('/');
+      console.log('📂 Caminho do arquivo:', filePath);
+
+      // Gerar nova URL assinada (válida por 1 hora)
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from('pdfs')
+        .createSignedUrl(filePath, 3600); // 1 hora
+
+      if (signedUrlError) {
+        console.error('❌ Erro ao gerar URL assinada:', signedUrlError);
+        throw new Error(`Erro ao gerar URL: ${signedUrlError.message}`);
+      }
+
+      console.log('🔗 Nova URL assinada gerada');
+
+      // Fazer download usando a nova URL assinada
       console.log('📥 Fazendo download do PDF...');
-      const response = await fetch(order.pdf_gerado_url, {
+      const response = await fetch(signedUrlData.signedUrl, {
         method: 'GET',
         headers: {
           'Accept': 'application/pdf'
