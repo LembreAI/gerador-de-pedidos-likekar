@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Trash2, Printer, Filter } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Search, Trash2, Printer, Filter, Eye } from "lucide-react";
 import { useOrders } from "@/contexts/OrdersContext";
 import { useToast } from "@/hooks/use-toast";
 import { generateLikeKarPDF, PedidoData } from "@/services/likeKarPDFGenerator";
@@ -36,6 +37,8 @@ export default function Orders() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [localLoading, setLocalLoading] = useState(loading);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
   // Sincronizar estado de loading local
   useEffect(() => {
@@ -185,6 +188,24 @@ export default function Orders() {
       });
     }
   };
+
+  const handleViewOrder = async (order: any) => {
+    try {
+      setLocalLoading(true);
+      const orderDetails = await getOrderWithDetails(order.id);
+      setSelectedOrder(orderDetails);
+      setIsViewDialogOpen(true);
+    } catch (error) {
+      console.error('Erro ao carregar detalhes do pedido:', error);
+      toast({
+        title: "Erro ao carregar pedido",
+        description: "Não foi possível carregar os detalhes do pedido.",
+        variant: "destructive"
+      });
+    } finally {
+      setLocalLoading(false);
+    }
+  };
   return <div className="space-y-6">
       {/* Header */}
       <div>
@@ -255,6 +276,15 @@ export default function Orders() {
                             variant="ghost" 
                             size="sm" 
                             className="h-8 w-8 p-0" 
+                            title="Visualizar pedido"
+                            onClick={() => handleViewOrder(order)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0" 
                             title="Imprimir pedido"
                             onClick={() => handlePrintOrder(order)}
                           >
@@ -291,5 +321,168 @@ export default function Orders() {
           </div>
         </div>
       </Card>
+
+      {/* Modal de Visualização do Pedido */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Pedido #{selectedOrder?.id}</DialogTitle>
+          </DialogHeader>
+          
+          {selectedOrder && (
+            <div className="space-y-6">
+              {/* Cabeçalho do Pedido */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground">Número do Pedido</h3>
+                  <p className="font-mono">{selectedOrder.id}</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground">Data</h3>
+                  <p>{new Date(selectedOrder.created_at).toLocaleDateString('pt-BR')}</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground">Status</h3>
+                  <Badge className={getStatusColor(selectedOrder.status)}>
+                    {selectedOrder.status}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Dados do Cliente */}
+              <Card className="p-4">
+                <h3 className="font-semibold mb-3">Dados do Cliente</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Nome</p>
+                    <p className="font-medium">{selectedOrder.cliente?.nome || selectedOrder.responsavel_nome || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Telefone</p>
+                    <p className="font-medium">{selectedOrder.cliente?.telefone || selectedOrder.responsavel_telefone || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">E-mail</p>
+                    <p className="font-medium">{selectedOrder.cliente?.email || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">CPF/CNPJ</p>
+                    <p className="font-medium">{selectedOrder.cliente?.cpf_cnpj || 'N/A'}</p>
+                  </div>
+                  {selectedOrder.cliente?.endereco && (
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-muted-foreground">Endereço</p>
+                      <p className="font-medium">{selectedOrder.cliente.endereco}</p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+
+              {/* Dados do Veículo */}
+              <Card className="p-4">
+                <h3 className="font-semibold mb-3">Veículo do Cliente</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Marca/Modelo</p>
+                    <p className="font-medium">
+                      {selectedOrder.veiculo ? 
+                        `${selectedOrder.veiculo.marca} ${selectedOrder.veiculo.modelo}` : 
+                        'N/A'
+                      }
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Ano</p>
+                    <p className="font-medium">{selectedOrder.veiculo?.ano || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Cor</p>
+                    <p className="font-medium">{selectedOrder.veiculo?.cor || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Placa</p>
+                    <p className="font-medium">{selectedOrder.veiculo?.placa || 'N/A'}</p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Produtos */}
+              <Card className="p-4">
+                <h3 className="font-semibold mb-3">Produtos</h3>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead className="text-center">Qtd</TableHead>
+                        <TableHead className="text-right">Valor Unit.</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedOrder.produtos && selectedOrder.produtos.length > 0 ? (
+                        selectedOrder.produtos.map((produto: any, index: number) => (
+                          <TableRow key={index}>
+                            <TableCell>{produto.descricao}</TableCell>
+                            <TableCell className="text-center">{produto.quantidade}</TableCell>
+                            <TableCell className="text-right">
+                              R$ {(produto.valor_unitario || 0).toFixed(2).replace('.', ',')}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              R$ {(produto.valor_total || 0).toFixed(2).replace('.', ',')}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center text-muted-foreground">
+                            Nenhum produto encontrado
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+                
+                {selectedOrder.produtos && selectedOrder.produtos.length > 0 && (
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="flex justify-end">
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground">Valor Total</p>
+                        <p className="text-lg font-semibold">
+                          R$ {(selectedOrder.valor_total || 0).toFixed(2).replace('.', ',')}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </Card>
+
+              {/* Responsáveis */}
+              <Card className="p-4">
+                <h3 className="font-semibold mb-3">Responsáveis</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Instalador</p>
+                    <p className="font-medium">{selectedOrder.instalador?.nome || 'Não definido'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Vendedor</p>
+                    <p className="font-medium">{selectedOrder.vendedor?.nome || 'Não definido'}</p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Observações */}
+              {selectedOrder.observacoes && (
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-3">Observações</h3>
+                  <p className="text-muted-foreground">{selectedOrder.observacoes}</p>
+                </Card>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>;
 }
