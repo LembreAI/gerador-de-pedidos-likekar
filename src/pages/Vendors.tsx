@@ -89,7 +89,6 @@ export default function Vendors() {
                 <TableRow className="border-b bg-muted/30">
                   <TableHead className="w-12"></TableHead>
                   <TableHead className="font-medium text-muted-foreground">Vendedor</TableHead>
-                  <TableHead className="font-medium text-muted-foreground">Status</TableHead>
                   <TableHead className="font-medium text-muted-foreground">Contato</TableHead>
                   <TableHead className="font-medium text-muted-foreground">Vendas</TableHead>
                   <TableHead className="font-medium text-muted-foreground">Comissão</TableHead>
@@ -118,11 +117,6 @@ export default function Vendors() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={vendor.status === "Ativo" ? "text-green-600 border-green-200" : "text-red-600 border-red-200"}>
-                        {vendor.status}
-                      </Badge>
-                    </TableCell>
                     <TableCell className="text-muted-foreground">{vendor.telefone}</TableCell>
                     <TableCell className="font-medium text-foreground">{vendor.vendas}</TableCell>
                     <TableCell className="font-medium text-primary">{vendor.comissao}</TableCell>
@@ -146,26 +140,6 @@ export default function Vendors() {
           </div>
         </div>
       </Card>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6 border text-center">
-          <h3 className="text-2xl font-medium text-primary">3</h3>
-          <p className="text-muted-foreground">Total de Vendedores</p>
-        </Card>
-        <Card className="p-6 border text-center">
-          <h3 className="text-2xl font-medium text-primary">2</h3>
-          <p className="text-muted-foreground">Ativos</p>
-        </Card>
-        <Card className="p-6 border text-center">
-          <h3 className="text-2xl font-medium text-primary">56</h3>
-          <p className="text-muted-foreground">Vendas Total</p>
-        </Card>
-        <Card className="p-6 border text-center">
-          <h3 className="text-2xl font-medium text-primary">7.2%</h3>
-          <p className="text-muted-foreground">Comissão Média</p>
-        </Card>
-      </div>
     </div>
   );
 }
