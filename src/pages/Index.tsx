@@ -248,20 +248,38 @@ const Index = () => {
         return total + (valor * (produto.quantidade || 1));
       }, 0);
 
-      // Verificar se já existe um pedido com este número
-      const { data: existingOrder } = await supabase
-        .from('pedidos')
-        .select('id')
-        .eq('id', orderData.pedido.numero)
-        .maybeSingle();
+      // Gerar número único para o pedido se necessário
+      let numeroFinal = orderData.pedido.numero;
+      let attempts = 0;
+      const maxAttempts = 10;
+      
+      while (attempts < maxAttempts) {
+        const { data: existingOrder } = await supabase
+          .from('pedidos')
+          .select('id')
+          .eq('id', numeroFinal)
+          .maybeSingle();
 
-      if (existingOrder) {
-        throw new Error(`Já existe um pedido com o número ${orderData.pedido.numero}. Por favor, use um número diferente.`);
+        if (!existingOrder) {
+          break; // Número está disponível
+        }
+        
+        // Gerar novo número incrementando
+        attempts++;
+        const baseNumber = parseInt(orderData.pedido.numero);
+        numeroFinal = (baseNumber + attempts).toString();
       }
+
+      if (attempts >= maxAttempts) {
+        // Se não conseguiu gerar número único, usar timestamp
+        numeroFinal = `${orderData.pedido.numero}-${Date.now()}`;
+      }
+
+      console.log(`📝 Usando número do pedido: ${numeroFinal}`);
 
       // Salvar o pedido
       const pedidoData = {
-        id: orderData.pedido.numero,
+        id: numeroFinal,
         user_id: (await supabase.auth.getUser()).data.user?.id,
         cliente_id: clienteId,
         veiculo_id: veiculo.id,
@@ -271,7 +289,7 @@ const Index = () => {
         status: 'pendente',
         responsavel_nome: orderData.cliente.nome,
         responsavel_telefone: orderData.cliente.telefone || '',
-        observacoes: ''
+        observacoes: orderData.observacoes || ''
       };
 
       const { data: pedido, error: pedidoError } = await supabase
@@ -283,25 +301,53 @@ const Index = () => {
       if (pedidoError) throw pedidoError;
 
       // Salvar os produtos do pedido
+      console.log('📦 Produtos a serem salvos:', orderData.produtos);
+      
       if (orderData.produtos && orderData.produtos.length > 0) {
-        const produtosData = orderData.produtos.map((produto: any) => ({
-          pedido_id: pedido.id,
-          descricao: produto.descricao || 'Produto',
-          quantidade: produto.quantidade || 1,
-          valor_unitario: parseFloat(produto.valorUnitario?.replace(/[^\d,]/g, '').replace(',', '.') || '0'),
-          valor_total: parseFloat(produto.valorUnitario?.replace(/[^\d,]/g, '').replace(',', '.') || '0') * (produto.quantidade || 1)
-        }));
+        const produtosData = orderData.produtos.map((produto: any) => {
+          // Tratar o campo valorUnitario que pode vir como string formatada
+          let valorUnitario = 0;
+          if (produto.valorUnitario) {
+            if (typeof produto.valorUnitario === 'string') {
+              valorUnitario = parseFloat(produto.valorUnitario.replace(/[^\d,]/g, '').replace(',', '.') || '0');
+            } else {
+              valorUnitario = parseFloat(produto.valorUnitario) || 0;
+            }
+          }
+          
+          const quantidade = produto.quantidade || 1;
+          const valorTotal = valorUnitario * quantidade;
+          
+          console.log(`📦 Produto: ${produto.descricao}, Qtd: ${quantidade}, Unit: ${valorUnitario}, Total: ${valorTotal}`);
+          
+          return {
+            pedido_id: pedido.id,
+            descricao: produto.descricao || 'Produto',
+            quantidade: quantidade,
+            valor_unitario: valorUnitario,
+            valor_total: valorTotal
+          };
+        });
+
+        console.log('📦 Dados formatados dos produtos:', produtosData);
 
         const { error: produtosError } = await supabase
           .from('produtos_pedido')
           .insert(produtosData);
 
-        if (produtosError) throw produtosError;
+        if (produtosError) {
+          console.error('❌ Erro ao salvar produtos:', produtosError);
+          throw produtosError;
+        }
+        
+        console.log('✅ Produtos salvos com sucesso!');
+      } else {
+        console.log('⚠️ Nenhum produto encontrado para salvar');
       }
 
       toast({
         title: "Pedido salvo com sucesso!",
-        description: `Pedido ${orderData.pedido.numero} foi criado.`
+        description: `Pedido ${numeroFinal} foi criado.`
       });
 
       // Navegar para pedidos se solicitado
