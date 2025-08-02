@@ -3,7 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Mail, Phone, MoreVertical } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Plus, Search, Mail, Phone, MoreVertical, Edit, Eye, Filter } from "lucide-react";
 
 const vendors = [
   {
@@ -55,75 +63,89 @@ export default function Vendors() {
         </Button>
       </div>
 
-      {/* Search */}
+      {/* Search and Filters */}
       <Card className="p-6 border">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar vendedores..."
-            className="pl-10"
-          />
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar vendedores..."
+              className="pl-10"
+            />
+          </div>
+          <Button variant="outline" className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            Filtrar
+          </Button>
         </div>
       </Card>
 
-      {/* Vendors Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {vendors.map((vendor) => (
-          <Card key={vendor.id} className="p-6 border">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-12 w-12 bg-muted">
-                  <AvatarFallback className="text-primary font-medium">
-                    {vendor.iniciais}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="font-medium text-foreground">{vendor.nome}</h3>
-                  <Badge variant="outline">
-                    {vendor.status}
-                  </Badge>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Mail className="h-4 w-4" />
-                <span>{vendor.email}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Phone className="h-4 w-4" />
-                <span>{vendor.telefone}</span>
-              </div>
-            </div>
-
-            <div className="mt-4 pt-4 border-t">
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div>
-                  <p className="text-2xl font-medium text-primary">{vendor.vendas}</p>
-                  <p className="text-xs text-muted-foreground">Vendas</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-medium text-primary">{vendor.comissao}</p>
-                  <p className="text-xs text-muted-foreground">Comissão</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1">
-                Editar
-              </Button>
-              <Button variant="outline" size="sm" className="flex-1">
-                Ver Vendas
-              </Button>
-            </div>
-          </Card>
-        ))}
-      </div>
+      {/* Vendors Table */}
+      <Card className="border">
+        <div className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b bg-muted/30">
+                  <TableHead className="w-12"></TableHead>
+                  <TableHead className="font-medium text-muted-foreground">Vendedor</TableHead>
+                  <TableHead className="font-medium text-muted-foreground">Status</TableHead>
+                  <TableHead className="font-medium text-muted-foreground">Contato</TableHead>
+                  <TableHead className="font-medium text-muted-foreground">Vendas</TableHead>
+                  <TableHead className="font-medium text-muted-foreground">Comissão</TableHead>
+                  <TableHead className="text-right font-medium text-muted-foreground">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {vendors.map((vendor) => (
+                  <TableRow key={vendor.id} className="hover:bg-muted/30 border-b">
+                    <TableCell className="w-12">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border border-input bg-background"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10 bg-muted">
+                          <AvatarFallback className="text-primary font-medium text-sm">
+                            {vendor.iniciais}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-foreground">{vendor.nome}</p>
+                          <p className="text-sm text-muted-foreground">{vendor.email}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={vendor.status === "Ativo" ? "text-green-600 border-green-200" : "text-red-600 border-red-200"}>
+                        {vendor.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{vendor.telefone}</TableCell>
+                    <TableCell className="font-medium text-foreground">{vendor.vendas}</TableCell>
+                    <TableCell className="font-medium text-primary">{vendor.comissao}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Ver vendas">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Editar">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Mais opções">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </Card>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
