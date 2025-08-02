@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,9 +17,10 @@ import { Loader2 } from "lucide-react";
 interface VendedorFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  vendedor?: any;
 }
 
-export function VendedorForm({ open, onOpenChange }: VendedorFormProps) {
+export function VendedorForm({ open, onOpenChange, vendedor }: VendedorFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     nome: "",
@@ -77,9 +78,11 @@ export function VendedorForm({ open, onOpenChange }: VendedorFormProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Adicionar Vendedor</DialogTitle>
+          <DialogTitle>
+            {vendedor ? 'Editar Vendedor' : 'Adicionar Vendedor'}
+          </DialogTitle>
           <DialogDescription>
-            Preencha as informações do novo vendedor.
+            {vendedor ? 'Edite as informações do vendedor.' : 'Preencha as informações do novo vendedor.'}
           </DialogDescription>
         </DialogHeader>
         
@@ -122,7 +125,7 @@ export function VendedorForm({ open, onOpenChange }: VendedorFormProps) {
             </Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Criar Vendedor
+              {vendedor ? 'Salvar Alterações' : 'Criar Vendedor'}
             </Button>
           </DialogFooter>
         </form>

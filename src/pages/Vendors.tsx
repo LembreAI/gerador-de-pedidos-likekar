@@ -3,25 +3,18 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Plus, Search, MoreVertical, Edit, Eye, Filter, Loader2 } from "lucide-react";
+import { Plus, Search, MoreVertical, Edit, Filter, Trash2 } from "lucide-react";
 import { useVendedores } from "@/contexts/VendedoresContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { VendedorForm } from "@/components/forms/VendedorForm";
 import { useState } from "react";
 
 export default function Vendors() {
-  const { vendedores, loading } = useVendedores();
+  const { vendedores, loading, deleteVendedor, updateVendedor } = useVendedores();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [editingVendedor, setEditingVendedor] = useState(null);
 
   const filteredVendedores = vendedores.filter(vendedor =>
     vendedor.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -34,6 +27,22 @@ export default function Vendors() {
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const handleEdit = (vendedor) => {
+    setEditingVendedor(vendedor);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: string, nome: string) => {
+    if (window.confirm(`Tem certeza que deseja excluir o vendedor ${nome}?`)) {
+      await deleteVendedor(id);
+    }
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingVendedor(null);
   };
 
   if (!user) {
@@ -82,26 +91,19 @@ export default function Vendors() {
       <Card className="border">
         <div className="p-0">
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b bg-muted/30">
-                  <TableHead className="w-12"></TableHead>
-                  <TableHead className="font-medium text-muted-foreground">Vendedor</TableHead>
-                  <TableHead className="font-medium text-muted-foreground">Contato</TableHead>
-                  <TableHead className="font-medium text-muted-foreground">Vendas</TableHead>
-                  <TableHead className="font-medium text-muted-foreground">Comissão</TableHead>
-                  <TableHead className="text-right font-medium text-muted-foreground">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <div className="min-w-full">
+              <div className="border-b bg-muted/30 flex p-4">
+                <div className="flex-1 font-medium text-muted-foreground">Vendedor</div>
+                <div className="w-32 font-medium text-muted-foreground">Comissão</div>
+                <div className="w-32 text-right font-medium text-muted-foreground">Ações</div>
+              </div>
+              
+              <div className="divide-y">
                 {loading ? (
                   // Loading skeleton
                   Array.from({ length: 3 }).map((_, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="w-12">
-                        <Skeleton className="h-4 w-4" />
-                      </TableCell>
-                      <TableCell>
+                    <div key={index} className="flex items-center p-4 hover:bg-muted/30">
+                      <div className="flex-1">
                         <div className="flex items-center gap-3">
                           <Skeleton className="h-10 w-10 rounded-full" />
                           <div>
@@ -109,43 +111,28 @@ export default function Vendors() {
                             <Skeleton className="h-3 w-48" />
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
+                      </div>
+                      <div className="w-32">
                         <Skeleton className="h-4 w-24" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-4 w-8" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-4 w-12" />
-                      </TableCell>
-                      <TableCell className="text-right">
+                      </div>
+                      <div className="w-32 text-right">
                         <div className="flex justify-end gap-1">
                           <Skeleton className="h-8 w-8" />
                           <Skeleton className="h-8 w-8" />
-                          <Skeleton className="h-8 w-8" />
                         </div>
-                      </TableCell>
-                    </TableRow>
+                      </div>
+                    </div>
                   ))
                 ) : filteredVendedores.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
-                      <p className="text-muted-foreground">
-                        {searchTerm ? "Nenhum vendedor encontrado" : "Nenhum vendedor cadastrado"}
-                      </p>
-                    </TableCell>
-                  </TableRow>
+                  <div className="p-8 text-center">
+                    <p className="text-muted-foreground">
+                      {searchTerm ? "Nenhum vendedor encontrado" : "Nenhum vendedor cadastrado"}
+                    </p>
+                  </div>
                 ) : (
                   filteredVendedores.map((vendedor) => (
-                    <TableRow key={vendedor.id} className="hover:bg-muted/30 border-b">
-                      <TableCell className="w-12">
-                        <input 
-                          type="checkbox" 
-                          className="w-4 h-4 rounded border border-input bg-background"
-                        />
-                      </TableCell>
-                      <TableCell>
+                    <div key={vendedor.id} className="flex items-center p-4 hover:bg-muted/30 border-b">
+                      <div className="flex-1">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10 bg-muted">
                             <AvatarFallback className="text-primary font-medium text-sm">
@@ -157,33 +144,46 @@ export default function Vendors() {
                             <p className="text-sm text-muted-foreground">{vendedor.email}</p>
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{vendedor.telefone || "-"}</TableCell>
-                      <TableCell className="font-medium text-foreground">{vendedor.vendas_total}</TableCell>
-                      <TableCell className="font-medium text-primary">{vendedor.comissao}%</TableCell>
-                      <TableCell className="text-right">
+                      </div>
+                      <div className="w-32 text-muted-foreground">
+                        {vendedor.comissao ? `${vendedor.comissao}%` : "5%"}
+                      </div>
+                      <div className="w-32 text-right">
                         <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Ver vendas">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Editar">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0" 
+                            title="Editar"
+                            onClick={() => handleEdit(vendedor)}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Mais opções">
-                            <MoreVertical className="h-4 w-4" />
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive" 
+                            title="Excluir"
+                            onClick={() => handleDelete(vendedor.id, vendedor.nome)}
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                      </TableCell>
-                    </TableRow>
+                      </div>
+                    </div>
                   ))
                 )}
-              </TableBody>
-            </Table>
+              </div>
+            </div>
           </div>
         </div>
       </Card>
       
-      <VendedorForm open={showForm} onOpenChange={setShowForm} />
+      <VendedorForm 
+        open={showForm} 
+        onOpenChange={handleCloseForm}
+        vendedor={editingVendedor}
+      />
     </div>
   );
 }
