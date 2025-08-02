@@ -82,7 +82,7 @@ export function InstaladorForm({ open, onOpenChange, instalador }: InstaladorFor
         // Creating new instalador
         const result = await createInstallador({
           nome: formData.nome,
-          email: `${formData.nome.toLowerCase().replace(/\s+/g, '.')}@exemplo.com`,
+          email: "",
           comissao: formData.comissao,
           ativo: true,
         });
