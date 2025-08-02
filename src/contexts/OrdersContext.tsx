@@ -23,20 +23,43 @@ export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const loadOrders = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Buscar pedidos
+      const { data: pedidosData, error: pedidosError } = await supabase
         .from('pedidos')
-        .select(`
-          *,
-          cliente:clientes(id, nome, telefone, email, endereco, cidade, estado, cep, cpf_cnpj),
-          veiculo:veiculos(id, marca, modelo, ano, placa, cor, chassi, combustivel),
-          vendedor:vendedores(id, nome, email, telefone),
-          instalador:instaladores(id, nome, email, telefone, especialidade),
-          produtos:produtos_pedido(*)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setOrders(data || []);
+      if (pedidosError) throw pedidosError;
+
+      if (!pedidosData || pedidosData.length === 0) {
+        setOrders([]);
+        return;
+      }
+
+      // Buscar dados relacionados para cada pedido
+      const ordersWithDetails = await Promise.all(
+        pedidosData.map(async (pedido) => {
+          const [clienteResult, veiculoResult, vendedorResult, instaladorResult, produtosResult] = await Promise.all([
+            pedido.cliente_id ? supabase.from('clientes').select('*').eq('id', pedido.cliente_id).single() : { data: null },
+            pedido.veiculo_id ? supabase.from('veiculos').select('*').eq('id', pedido.veiculo_id).single() : { data: null },
+            pedido.vendedor_id ? supabase.from('vendedores').select('*').eq('id', pedido.vendedor_id).single() : { data: null },
+            pedido.instalador_id ? supabase.from('instaladores').select('*').eq('id', pedido.instalador_id).single() : { data: null },
+            supabase.from('produtos_pedido').select('*').eq('pedido_id', pedido.id)
+          ]);
+
+          return {
+            ...pedido,
+            cliente: clienteResult.data,
+            veiculo: veiculoResult.data,
+            vendedor: vendedorResult.data,
+            instalador: instaladorResult.data,
+            produtos: produtosResult.data || []
+          };
+        })
+      );
+
+      setOrders(ordersWithDetails);
     } catch (error) {
       console.error('Error loading orders:', error);
     } finally {
