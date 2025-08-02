@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface OrdersContextType {
   orders: any[];
   loading: boolean;
+  reloadOrders: () => Promise<void>;
   getOrderWithDetails: (id: string) => any | undefined;
   deleteOrder: (id: string) => Promise<void>;
 }
@@ -68,6 +69,7 @@ export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     <OrdersContext.Provider value={{
       orders,
       loading,
+      reloadOrders: loadOrders,
       getOrderWithDetails,
       deleteOrder
     }}>

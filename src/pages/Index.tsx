@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useOrders } from "@/contexts/OrdersContext";
 import { useVendedores } from "@/contexts/VendedoresContext";
 import { useInstaladores } from "@/contexts/InstalladoresContext";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
 // Definição dos passos
@@ -35,7 +36,6 @@ const Index = () => {
     vendedor: ""
   });
   const { toast } = useToast();
-  // Remover addOrder - funcionalidade movida para Supabase diretamente
   const { vendedores } = useVendedores();
   const { instaladores } = useInstaladores();
   const navigate = useNavigate();
@@ -94,9 +94,8 @@ const Index = () => {
       const pdfBytes = await generateLikeKarPDF(orderData);
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
 
-      // TODO: Implementar salvamento direto no Supabase
-      // Por enquanto, apenas gerar o PDF sem salvar
-      console.log('PDF gerado com sucesso');
+      // Salvar pedido no Supabase
+      await saveOrderToSupabase(orderData, blob, saveAndGoToOrders);
 
       // Fazer download apenas se não estiver indo para página de pedidos
       if (!saveAndGoToOrders) {
@@ -127,6 +126,146 @@ const Index = () => {
         description: "Ocorreu um erro ao processar o pedido.",
         variant: "destructive"
       });
+    }
+  };
+
+  const saveOrderToSupabase = async (orderData: any, pdfBlob: Blob, goToOrders: boolean) => {
+    try {
+      // Primeiro, salvar ou buscar o cliente
+      const clienteData = {
+        nome: orderData.cliente.nome,
+        telefone: orderData.cliente.telefone,
+        email: orderData.cliente.email || '',
+        endereco: orderData.cliente.endereco || '',
+        cidade: orderData.cliente.cidade || '',
+        estado: orderData.cliente.estado || '',
+        cep: orderData.cliente.cep || '',
+        cpf_cnpj: orderData.cliente.cnpj || '',
+        user_id: (await supabase.auth.getUser()).data.user?.id
+      };
+
+      const { data: existingCliente } = await supabase
+        .from('clientes')
+        .select('id')
+        .eq('nome', clienteData.nome)
+        .eq('user_id', clienteData.user_id)
+        .maybeSingle();
+
+      let clienteId;
+      if (existingCliente) {
+        clienteId = existingCliente.id;
+      } else {
+        const { data: newCliente, error: clienteError } = await supabase
+          .from('clientes')
+          .insert(clienteData)
+          .select('id')
+          .single();
+
+        if (clienteError) throw clienteError;
+        clienteId = newCliente.id;
+      }
+
+      // Salvar o veículo
+      const veiculoData = {
+        marca: orderData.veiculo.marca,
+        modelo: orderData.veiculo.modelo,
+        ano: parseInt(orderData.veiculo.ano),
+        placa: orderData.veiculo.placa || '',
+        cor: orderData.veiculo.cor || '',
+        chassi: '',
+        combustivel: '',
+        cliente_id: clienteId
+      };
+
+      const { data: veiculo, error: veiculoError } = await supabase
+        .from('veiculos')
+        .insert(veiculoData)
+        .select('id')
+        .single();
+
+      if (veiculoError) throw veiculoError;
+
+      // Buscar IDs dos vendedor e instalador
+      let vendedorId = null;
+      let instaladorId = null;
+
+      if (orderData.responsaveis.vendedor) {
+        const { data: vendedor } = await supabase
+          .from('vendedores')
+          .select('id')
+          .eq('nome', orderData.responsaveis.vendedor)
+          .maybeSingle();
+        vendedorId = vendedor?.id;
+      }
+
+      if (orderData.responsaveis.instalador) {
+        const { data: instalador } = await supabase
+          .from('instaladores')
+          .select('id')
+          .eq('nome', orderData.responsaveis.instalador)
+          .maybeSingle();
+        instaladorId = instalador?.id;
+      }
+
+      // Calcular valor total
+      const valorTotal = orderData.produtos.reduce((total: number, produto: any) => {
+        const valor = parseFloat(produto.valorUnitario?.replace(/[^\d,]/g, '').replace(',', '.') || '0');
+        return total + (valor * (produto.quantidade || 1));
+      }, 0);
+
+      // Salvar o pedido
+      const pedidoData = {
+        id: orderData.pedido.numero,
+        user_id: (await supabase.auth.getUser()).data.user?.id,
+        cliente_id: clienteId,
+        veiculo_id: veiculo.id,
+        vendedor_id: vendedorId,
+        instalador_id: instaladorId,
+        valor_total: valorTotal,
+        status: 'pendente',
+        responsavel_nome: orderData.cliente.nome,
+        responsavel_telefone: orderData.cliente.telefone || '',
+        observacoes: ''
+      };
+
+      const { data: pedido, error: pedidoError } = await supabase
+        .from('pedidos')
+        .insert(pedidoData)
+        .select('id')
+        .single();
+
+      if (pedidoError) throw pedidoError;
+
+      // Salvar os produtos do pedido
+      if (orderData.produtos && orderData.produtos.length > 0) {
+        const produtosData = orderData.produtos.map((produto: any) => ({
+          pedido_id: pedido.id,
+          descricao: produto.descricao || 'Produto',
+          quantidade: produto.quantidade || 1,
+          valor_unitario: parseFloat(produto.valorUnitario?.replace(/[^\d,]/g, '').replace(',', '.') || '0'),
+          valor_total: parseFloat(produto.valorUnitario?.replace(/[^\d,]/g, '').replace(',', '.') || '0') * (produto.quantidade || 1)
+        }));
+
+        const { error: produtosError } = await supabase
+          .from('produtos_pedido')
+          .insert(produtosData);
+
+        if (produtosError) throw produtosError;
+      }
+
+      toast({
+        title: "Pedido salvo com sucesso!",
+        description: `Pedido ${orderData.pedido.numero} foi criado.`
+      });
+
+      // Navegar para pedidos se solicitado
+      if (goToOrders) {
+        navigate('/pedidos');
+      }
+
+    } catch (error) {
+      console.error('Erro ao salvar no Supabase:', error);
+      throw error;
     }
   };
 
