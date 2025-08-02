@@ -32,6 +32,13 @@ const menuItems = [{
   path: "/configuracoes"
 }];
 export function Navbar() {
+  const location = useLocation();
+  
+  // Don't render navbar on auth page
+  if (location.pathname === '/auth') {
+    return null;
+  }
+
   const { user, signOut } = useAuth();
 
   const getUserInitials = () => {
@@ -40,7 +47,6 @@ export function Navbar() {
   };
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
 
   // Close mobile menu when route changes
   useEffect(() => {
