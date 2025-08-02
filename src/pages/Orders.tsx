@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, Trash2, Printer, Filter, Eye } from "lucide-react";
+import { Search, Trash2, Printer, Filter, Eye, Download } from "lucide-react";
 import { useOrders } from "@/contexts/OrdersContext";
 import { useToast } from "@/hooks/use-toast";
 import { generateLikeKarPDF, PedidoData } from "@/services/likeKarPDFGenerator";
@@ -196,6 +196,41 @@ export default function Orders() {
       setLocalLoading(false);
     }
   };
+
+  const handleDownloadOrder = async (order: any) => {
+    try {
+      if (!order.pdf_gerado_url) {
+        toast({
+          title: "PDF não encontrado",
+          description: "Este pedido não possui PDF salvo.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Criar link de download
+      const link = document.createElement('a');
+      link.href = order.pdf_gerado_url;
+      link.download = `Pedido_${order.id}.pdf`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: "Download iniciado",
+        description: `PDF do pedido ${order.id} está sendo baixado.`
+      });
+    } catch (error) {
+      console.error('Erro ao baixar PDF:', error);
+      toast({
+        title: "Erro no download",
+        description: "Não foi possível baixar o PDF.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleDeleteOrder = async (orderId: string) => {
     try {
       await deleteOrder(orderId);
@@ -304,15 +339,29 @@ export default function Orders() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 w-8 p-0" 
-                            title="Imprimir pedido"
-                            onClick={() => handlePrintOrder(order)}
-                          >
-                            <Printer className="h-4 w-4" />
-                          </Button>
+                          
+                          {order.pdf_gerado_url ? (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0 text-green-600" 
+                              title="Baixar PDF salvo"
+                              onClick={() => handleDownloadOrder(order)}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0" 
+                              title="Imprimir pedido"
+                              onClick={() => handlePrintOrder(order)}
+                            >
+                              <Printer className="h-4 w-4" />
+                            </Button>
+                          )}
+                          
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" title="Excluir">

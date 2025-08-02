@@ -95,20 +95,11 @@ const Index = () => {
       const pdfBytes = await generateLikeKarPDF(orderData);
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
 
-      // Salvar pedido no Supabase
+      // Salvar pedido no Supabase (incluindo upload do PDF)
       await saveOrderToSupabase(orderData, blob, saveAndGoToOrders);
 
-      // Fazer download apenas se não estiver indo para página de pedidos
-      if (!saveAndGoToOrders) {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Pedido_LikeKar_${orderData.pedido.numero}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }
+      // Não fazer download aqui pois o PDF está salvo no storage
+      // O usuário pode baixar pela página de pedidos
 
       setCompletedSteps([...completedSteps, 3]);
       
@@ -311,6 +302,40 @@ const Index = () => {
         .single();
 
       if (pedidoError) throw pedidoError;
+
+      // Upload do PDF para o storage do Supabase
+      console.log('📤 Fazendo upload do PDF para o storage...');
+      const fileName = `pedido_${numeroOriginal}_${Date.now()}.pdf`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('pdfs')
+        .upload(fileName, pdfBlob, {
+          contentType: 'application/pdf',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('❌ Erro ao fazer upload do PDF:', uploadError);
+        throw uploadError;
+      }
+
+      // Obter URL pública do PDF
+      const { data: urlData } = supabase.storage
+        .from('pdfs')
+        .getPublicUrl(fileName);
+
+      // Atualizar pedido com a URL do PDF gerado
+      const { error: updateError } = await supabase
+        .from('pedidos')
+        .update({ pdf_gerado_url: urlData.publicUrl })
+        .eq('id', pedido.id);
+
+      if (updateError) {
+        console.error('❌ Erro ao atualizar URL do PDF:', updateError);
+        throw updateError;
+      }
+
+      console.log('✅ PDF salvo com sucesso:', urlData.publicUrl);
 
       // Salvar os produtos do pedido
       console.log('📦 Produtos a serem salvos:', orderData.produtos);
