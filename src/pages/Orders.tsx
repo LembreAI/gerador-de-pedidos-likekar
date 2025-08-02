@@ -7,7 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Search, Trash2, Printer, Filter } from "lucide-react";
 import { useOrders } from "@/contexts/OrdersContext";
 import { useToast } from "@/hooks/use-toast";
-import { generateLikeKarPDF } from "@/services/likeKarPDFGenerator";
+import { generateLikeKarPDF, PedidoData } from "@/services/likeKarPDFGenerator";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 const getStatusColor = (status: string) => {
@@ -72,21 +72,25 @@ export default function Orders() {
         URL.revokeObjectURL(url);
       } else {
         console.log('🔄 Regenerando PDF a partir dos dados');
-        // Preparar dados do pedido para impressão
-        const orderData = {
+        // Preparar dados do pedido para impressão usando a mesma estrutura da página Index
+        const orderData: PedidoData = {
           cliente: {
             nome: order.cliente?.nome || order.responsavel_nome || 'Cliente não identificado',
             telefone: order.cliente?.telefone || order.responsavel_telefone || '',
             email: order.cliente?.email || '',
             endereco: order.cliente?.endereco || '',
-            cpf_cnpj: order.cliente?.cpf_cnpj || ''
+            cnpj: order.cliente?.cpf_cnpj || ''
           },
           pedido: {
             numero: order.id || 'N/A',
             data: new Date(order.created_at).toLocaleDateString('pt-BR') || new Date().toLocaleDateString('pt-BR'),
-            formaPagamento: 'À vista' // Campo obrigatório para o PDF
+            formaPagamento: 'À vista'
           },
-          produtos: order.produtos || [],
+          produtos: (order.produtos || []).map((produto: any) => ({
+            descricao: produto.descricao || 'Produto',
+            quantidade: produto.quantidade || 1,
+            valorUnitario: `R$ ${(produto.valor_unitario || 0).toFixed(2).replace('.', ',')}`
+          })),
           veiculo: {
             marca: order.veiculo?.marca || '',
             modelo: order.veiculo?.modelo || '',
