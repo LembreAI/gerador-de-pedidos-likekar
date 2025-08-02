@@ -8,52 +8,42 @@ import { useVendedores } from "@/contexts/VendedoresContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { VendedorForm } from "@/components/forms/VendedorForm";
 import { useState } from "react";
-
 export default function Vendors() {
-  const { vendedores, loading, deleteVendedor, updateVendedor } = useVendedores();
-  const { user } = useAuth();
+  const {
+    vendedores,
+    loading,
+    deleteVendedor,
+    updateVendedor
+  } = useVendedores();
+  const {
+    user
+  } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingVendedor, setEditingVendedor] = useState(null);
-
-  const filteredVendedores = vendedores.filter(vendedor =>
-    vendedor.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vendedor.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+  const filteredVendedores = vendedores.filter(vendedor => vendedor.nome.toLowerCase().includes(searchTerm.toLowerCase()) || vendedor.email.toLowerCase().includes(searchTerm.toLowerCase()));
   const getInitials = (nome: string) => {
-    return nome.split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+    return nome.split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2);
   };
-
-  const handleEdit = (vendedor) => {
+  const handleEdit = vendedor => {
     setEditingVendedor(vendedor);
     setShowForm(true);
   };
-
   const handleDelete = async (id: string, nome: string) => {
     if (window.confirm(`Tem certeza que deseja excluir o vendedor ${nome}?`)) {
       await deleteVendedor(id);
     }
   };
-
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingVendedor(null);
   };
-
   if (!user) {
-    return (
-      <div className="flex items-center justify-center h-64">
+    return <div className="flex items-center justify-center h-64">
         <p className="text-muted-foreground">Faça login para ver os vendedores</p>
-      </div>
-    );
+      </div>;
   }
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -73,17 +63,9 @@ export default function Vendors() {
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar vendedores..."
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+            <Input placeholder="Buscar vendedores..." className="pl-10" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
           </div>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Filtrar
-          </Button>
+          
         </div>
       </Card>
 
@@ -99,10 +81,11 @@ export default function Vendors() {
               </div>
               
               <div className="divide-y">
-                {loading ? (
-                  // Loading skeleton
-                  Array.from({ length: 3 }).map((_, index) => (
-                    <div key={index} className="flex items-center p-4 hover:bg-muted/30">
+                {loading ?
+              // Loading skeleton
+              Array.from({
+                length: 3
+              }).map((_, index) => <div key={index} className="flex items-center p-4 hover:bg-muted/30">
                       <div className="flex-1">
                         <div className="flex items-center gap-3">
                           <Skeleton className="h-10 w-10 rounded-full" />
@@ -121,17 +104,11 @@ export default function Vendors() {
                           <Skeleton className="h-8 w-8" />
                         </div>
                       </div>
-                    </div>
-                  ))
-                ) : filteredVendedores.length === 0 ? (
-                  <div className="p-8 text-center">
+                    </div>) : filteredVendedores.length === 0 ? <div className="p-8 text-center">
                     <p className="text-muted-foreground">
                       {searchTerm ? "Nenhum vendedor encontrado" : "Nenhum vendedor cadastrado"}
                     </p>
-                  </div>
-                ) : (
-                  filteredVendedores.map((vendedor) => (
-                    <div key={vendedor.id} className="flex items-center p-4 hover:bg-muted/30 border-b">
+                  </div> : filteredVendedores.map(vendedor => <div key={vendedor.id} className="flex items-center p-4 hover:bg-muted/30 border-b">
                       <div className="flex-1">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10 bg-muted">
@@ -150,40 +127,21 @@ export default function Vendors() {
                       </div>
                       <div className="w-32 text-right">
                         <div className="flex justify-end gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 w-8 p-0" 
-                            title="Editar"
-                            onClick={() => handleEdit(vendedor)}
-                          >
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Editar" onClick={() => handleEdit(vendedor)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 w-8 p-0 text-destructive hover:text-destructive" 
-                            title="Excluir"
-                            onClick={() => handleDelete(vendedor.id, vendedor.nome)}
-                          >
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" title="Excluir" onClick={() => handleDelete(vendedor.id, vendedor.nome)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
-                    </div>
-                  ))
-                )}
+                    </div>)}
               </div>
             </div>
           </div>
         </div>
       </Card>
       
-      <VendedorForm 
-        open={showForm} 
-        onOpenChange={handleCloseForm}
-        vendedor={editingVendedor}
-      />
-    </div>
-  );
+      <VendedorForm open={showForm} onOpenChange={handleCloseForm} vendedor={editingVendedor} />
+    </div>;
 }
