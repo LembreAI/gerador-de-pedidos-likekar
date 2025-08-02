@@ -27,8 +27,23 @@ export function VendedorForm({ open, onOpenChange, vendedor }: VendedorFormProps
     comissao: 5,
   });
 
-  const { createVendedor } = useVendedores();
+  const { createVendedor, updateVendedor } = useVendedores();
   const { toast } = useToast();
+
+  // Populate form when editing
+  useEffect(() => {
+    if (vendedor) {
+      setFormData({
+        nome: vendedor.nome || "",
+        comissao: vendedor.comissao || 5,
+      });
+    } else {
+      setFormData({
+        nome: "",
+        comissao: 5,
+      });
+    }
+  }, [vendedor]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -52,13 +67,24 @@ export function VendedorForm({ open, onOpenChange, vendedor }: VendedorFormProps
 
     setIsLoading(true);
     try {
-      const result = await createVendedor({
-        ...formData,
-        email: "",
-        telefone: "",
-        vendas_total: 0,
-        ativo: true,
-      });
+      let result;
+      
+      if (vendedor) {
+        // Update existing vendedor
+        result = await updateVendedor(vendedor.id, {
+          nome: formData.nome,
+          comissao: formData.comissao,
+        });
+      } else {
+        // Create new vendedor
+        result = await createVendedor({
+          ...formData,
+          email: "",
+          telefone: "",
+          vendas_total: 0,
+          ativo: true,
+        });
+      }
 
       if (result) {
         setFormData({
