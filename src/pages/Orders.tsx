@@ -199,7 +199,11 @@ export default function Orders() {
 
   const handleDownloadOrder = async (order: any) => {
     try {
+      console.log('⬇️ Iniciando download do pedido:', order.id);
+      console.log('🔗 URL do PDF:', order.pdf_gerado_url);
+      
       if (!order.pdf_gerado_url) {
+        console.log('❌ PDF não encontrado para o pedido');
         toast({
           title: "PDF não encontrado",
           description: "Este pedido não possui PDF salvo.",
@@ -208,24 +212,38 @@ export default function Orders() {
         return;
       }
 
+      // Fazer fetch primeiro para verificar se o arquivo existe
+      const response = await fetch(order.pdf_gerado_url);
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status}: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      console.log('✅ PDF baixado, tamanho:', blob.size);
+
+      // Criar URL para download
+      const url = URL.createObjectURL(blob);
+      
       // Criar link de download
       const link = document.createElement('a');
-      link.href = order.pdf_gerado_url;
+      link.href = url;
       link.download = `Pedido_${order.id}.pdf`;
-      link.target = '_blank';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      
+      // Limpar URL
+      URL.revokeObjectURL(url);
 
       toast({
         title: "Download iniciado",
         description: `PDF do pedido ${order.id} está sendo baixado.`
       });
     } catch (error) {
-      console.error('Erro ao baixar PDF:', error);
+      console.error('❌ Erro ao baixar PDF:', error);
       toast({
         title: "Erro no download",
-        description: "Não foi possível baixar o PDF.",
+        description: `Não foi possível baixar o PDF: ${error.message}`,
         variant: "destructive"
       });
     }

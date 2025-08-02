@@ -305,7 +305,11 @@ const Index = () => {
 
       // Upload do PDF para o storage do Supabase
       console.log('📤 Fazendo upload do PDF para o storage...');
-      const fileName = `pedido_${numeroOriginal}_${Date.now()}.pdf`;
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) throw new Error('Usuário não autenticado');
+      
+      const fileName = `${user.id}/${numeroOriginal}_${Date.now()}.pdf`;
+      console.log('📂 Nome do arquivo:', fileName);
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('pdfs')
@@ -316,13 +320,16 @@ const Index = () => {
 
       if (uploadError) {
         console.error('❌ Erro ao fazer upload do PDF:', uploadError);
-        throw uploadError;
+        throw new Error(`Erro no upload do PDF: ${uploadError.message}`);
       }
+      console.log('✅ Upload realizado:', uploadData.path);
 
       // Obter URL pública do PDF
       const { data: urlData } = supabase.storage
         .from('pdfs')
         .getPublicUrl(fileName);
+      
+      console.log('🔗 URL do PDF:', urlData.publicUrl);
 
       // Atualizar pedido com a URL do PDF gerado
       const { error: updateError } = await supabase
