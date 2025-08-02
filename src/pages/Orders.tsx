@@ -2,32 +2,13 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Search, Eye, Edit, Trash2, Download, Filter } from "lucide-react";
 import { useOrders } from "@/contexts/OrdersContext";
 import { useToast } from "@/hooks/use-toast";
 import { generateLikeKarPDF } from "@/services/likeKarPDFGenerator";
 import { useState } from "react";
-
-
 const getStatusColor = (status: string) => {
   switch (status) {
     case "Concluído":
@@ -40,18 +21,16 @@ const getStatusColor = (status: string) => {
       return "bg-gray-100 text-gray-800 border-gray-200";
   }
 };
-
 export default function Orders() {
-  const { orders, deleteOrder } = useOrders();
-  const { toast } = useToast();
+  const {
+    orders,
+    deleteOrder
+  } = useOrders();
+  const {
+    toast
+  } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-
-  const filteredOrders = orders.filter(order =>
-    order.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.carro.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+  const filteredOrders = orders.filter(order => order.cliente.toLowerCase().includes(searchTerm.toLowerCase()) || order.numero.toLowerCase().includes(searchTerm.toLowerCase()) || order.carro.toLowerCase().includes(searchTerm.toLowerCase()));
   const handleDownloadPDF = async (order: any) => {
     try {
       if (order.pdfBlob) {
@@ -76,9 +55,10 @@ export default function Orders() {
             vendedor: order.vehicleData.vendedor
           }
         };
-        
         const pdfBytes = await generateLikeKarPDF(orderData);
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const blob = new Blob([pdfBytes], {
+          type: 'application/pdf'
+        });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -88,7 +68,6 @@ export default function Orders() {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       }
-      
       toast({
         title: "PDF baixado com sucesso!",
         description: `Pedido ${order.numero} foi baixado.`
@@ -102,7 +81,6 @@ export default function Orders() {
       });
     }
   };
-
   const handleDeleteOrder = (orderId: string) => {
     deleteOrder(orderId);
     toast({
@@ -110,8 +88,7 @@ export default function Orders() {
       description: "O pedido foi removido com sucesso."
     });
   };
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold text-foreground">Pedidos</h1>
@@ -125,17 +102,9 @@ export default function Orders() {
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por cliente, vendedor ou ID do pedido..."
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+            <Input placeholder="Buscar por cliente, vendedor ou ID do pedido..." className="pl-10" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
           </div>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Filtrar
-          </Button>
+          
         </div>
       </Card>
 
@@ -155,20 +124,13 @@ export default function Orders() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredOrders.length === 0 ? (
-                  <TableRow>
+                {filteredOrders.length === 0 ? <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                       {orders.length === 0 ? "Nenhum pedido encontrado" : "Nenhum resultado para a busca"}
                     </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredOrders.map((order) => (
-                    <TableRow key={order.id} className="hover:bg-muted/30 border-b">
+                  </TableRow> : filteredOrders.map(order => <TableRow key={order.id} className="hover:bg-muted/30 border-b">
                       <TableCell className="w-12">
-                        <input 
-                          type="checkbox" 
-                          className="w-4 h-4 rounded border border-input bg-background"
-                        />
+                        <input type="checkbox" className="w-4 h-4 rounded border border-input bg-background" />
                       </TableCell>
                       <TableCell className="font-medium text-foreground">{order.numero}</TableCell>
                       <TableCell className="text-muted-foreground">{order.data}</TableCell>
@@ -182,13 +144,7 @@ export default function Orders() {
                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Editar">
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 w-8 p-0" 
-                            title="Baixar PDF"
-                            onClick={() => handleDownloadPDF(order)}
-                          >
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Baixar PDF" onClick={() => handleDownloadPDF(order)}>
                             <Download className="h-4 w-4" />
                           </Button>
                           <AlertDialog>
@@ -206,10 +162,7 @@ export default function Orders() {
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={() => handleDeleteOrder(order.id)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
+                                <AlertDialogAction onClick={() => handleDeleteOrder(order.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                                   Excluir
                                 </AlertDialogAction>
                               </AlertDialogFooter>
@@ -217,14 +170,11 @@ export default function Orders() {
                           </AlertDialog>
                         </div>
                       </TableCell>
-                    </TableRow>
-                  ))
-                )}
+                    </TableRow>)}
               </TableBody>
             </Table>
           </div>
         </div>
       </Card>
-    </div>
-  );
+    </div>;
 }
