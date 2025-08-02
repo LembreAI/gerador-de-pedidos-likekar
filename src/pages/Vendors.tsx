@@ -1,8 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -11,42 +11,36 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Mail, Phone, MoreVertical, Edit, Eye, Filter } from "lucide-react";
-
-const vendors = [
-  {
-    id: 1,
-    nome: "Maria Santos",
-    email: "maria.santos@email.com",
-    telefone: "(11) 99999-9999",
-    vendas: 23,
-    comissao: "8%",
-    status: "Ativo",
-    iniciais: "MS",
-  },
-  {
-    id: 2,
-    nome: "Carlos Oliveira",
-    email: "carlos.oliveira@email.com",
-    telefone: "(11) 88888-8888",
-    vendas: 18,
-    comissao: "7%",
-    status: "Ativo",
-    iniciais: "CO",
-  },
-  {
-    id: 3,
-    nome: "Pedro Souza",
-    email: "pedro.souza@email.com",
-    telefone: "(11) 77777-7777",
-    vendas: 15,
-    comissao: "6%",
-    status: "Inativo",
-    iniciais: "PS",
-  },
-];
+import { Plus, Search, MoreVertical, Edit, Eye, Filter, Loader2 } from "lucide-react";
+import { useVendedores } from "@/contexts/VendedoresContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
 
 export default function Vendors() {
+  const { vendedores, loading } = useVendedores();
+  const { user } = useAuth();
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredVendedores = vendedores.filter(vendedor =>
+    vendedor.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vendedor.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getInitials = (nome: string) => {
+    return nome.split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Faça login para ver os vendedores</p>
+      </div>
+    );
+  }
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -71,6 +65,8 @@ export default function Vendors() {
             <Input
               placeholder="Buscar vendedores..."
               className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <Button variant="outline" className="flex items-center gap-2">
@@ -96,45 +92,89 @@ export default function Vendors() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {vendors.map((vendor) => (
-                  <TableRow key={vendor.id} className="hover:bg-muted/30 border-b">
-                    <TableCell className="w-12">
-                      <input 
-                        type="checkbox" 
-                        className="w-4 h-4 rounded border border-input bg-background"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10 bg-muted">
-                          <AvatarFallback className="text-primary font-medium text-sm">
-                            {vendor.iniciais}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-foreground">{vendor.nome}</p>
-                          <p className="text-sm text-muted-foreground">{vendor.email}</p>
+                {loading ? (
+                  // Loading skeleton
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="w-12">
+                        <Skeleton className="h-4 w-4" />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="h-10 w-10 rounded-full" />
+                          <div>
+                            <Skeleton className="h-4 w-32 mb-2" />
+                            <Skeleton className="h-3 w-48" />
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{vendor.telefone}</TableCell>
-                    <TableCell className="font-medium text-foreground">{vendor.vendas}</TableCell>
-                    <TableCell className="font-medium text-primary">{vendor.comissao}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Ver vendas">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Editar">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Mais opções">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-24" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-8" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-12" />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Skeleton className="h-8 w-8" />
+                          <Skeleton className="h-8 w-8" />
+                          <Skeleton className="h-8 w-8" />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredVendedores.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8">
+                      <p className="text-muted-foreground">
+                        {searchTerm ? "Nenhum vendedor encontrado" : "Nenhum vendedor cadastrado"}
+                      </p>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  filteredVendedores.map((vendedor) => (
+                    <TableRow key={vendedor.id} className="hover:bg-muted/30 border-b">
+                      <TableCell className="w-12">
+                        <input 
+                          type="checkbox" 
+                          className="w-4 h-4 rounded border border-input bg-background"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10 bg-muted">
+                            <AvatarFallback className="text-primary font-medium text-sm">
+                              {getInitials(vendedor.nome)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-foreground">{vendedor.nome}</p>
+                            <p className="text-sm text-muted-foreground">{vendedor.email}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{vendedor.telefone || "-"}</TableCell>
+                      <TableCell className="font-medium text-foreground">{vendedor.vendas_total}</TableCell>
+                      <TableCell className="font-medium text-primary">{vendedor.comissao}%</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Ver vendas">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Editar">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Mais opções">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
