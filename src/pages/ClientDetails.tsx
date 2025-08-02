@@ -1,7 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ArrowLeft, Edit, MapPin, Car, Calendar, Trash2 } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, Edit, MapPin, Car, Trash2, User, Phone, Mail, CreditCard, Palette } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -122,21 +125,29 @@ export default function ClientDetails() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header with Back Button */}
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <Button 
             variant="ghost" 
+            size="sm"
             onClick={() => navigate('/pedidos')}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </Button>
+          <div>
+            <h1 className="text-3xl font-bold">{client.nome}</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <Phone className="h-4 w-4 text-muted-foreground" />
+              <p className="text-lg text-muted-foreground">{client.telefone}</p>
+            </div>
+          </div>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => navigate(`/cliente/${id}/editar`)}>
+          <Button onClick={() => navigate(`/cliente/${id}/editar`)} className="bg-amber-500 hover:bg-amber-600">
             <Edit className="h-4 w-4 mr-2" />
             Editar
           </Button>
@@ -165,88 +176,137 @@ export default function ClientDetails() {
         </div>
       </div>
 
-      {/* Client Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-foreground">{client.nome}</h1>
-        <p className="text-xl text-muted-foreground">{client.telefone}</p>
-      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Dados Pessoais */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Dados Pessoais
+              </CardTitle>
+              <CardDescription>
+                Informações básicas do cliente
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* CPF/CNPJ */}
+                {client.cpf_cnpj && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-primary" />
+                      <Label className="font-medium">CPF/CNPJ</Label>
+                    </div>
+                    <p className="text-lg font-mono bg-muted p-3 rounded-md">{client.cpf_cnpj}</p>
+                  </div>
+                )}
 
-      {/* Client Details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* CPF/CNPJ */}
-        {client.cpf_cnpj && (
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <MapPin className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold text-foreground">CPF/CNPJ</h3>
-            </div>
-            <p className="text-2xl font-medium text-foreground">{client.cpf_cnpj}</p>
-          </Card>
-        )}
+                {/* Email */}
+                {client.email && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-primary" />
+                      <Label className="font-medium">E-mail</Label>
+                    </div>
+                    <p className="text-lg bg-muted p-3 rounded-md">{client.email}</p>
+                  </div>
+                )}
+              </div>
 
-        {/* Email */}
-        {client.email && (
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <MapPin className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold text-foreground">Email</h3>
-            </div>
-            <p className="text-lg text-foreground">{client.email}</p>
-          </Card>
-        )}
-
-        {/* CEP */}
-        {client.cep && (
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <MapPin className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold text-foreground">CEP</h3>
-            </div>
-            <p className="text-2xl font-medium text-foreground">{client.cep}</p>
-          </Card>
-        )}
-
-        {/* Endereço */}
-        {client.endereco && (
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <MapPin className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold text-foreground">Endereço</h3>
-            </div>
-            <p className="text-lg text-foreground">
-              {client.endereco}
-              {client.cidade && `, ${client.cidade}`}
-              {client.estado && ` - ${client.estado}`}
-            </p>
-          </Card>
-        )}
-      </div>
-
-      {/* Vehicles Section */}
-      {vehicles.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-foreground">Veículos</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {vehicles.map(vehicle => (
-              <Card key={vehicle.id} className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <Car className="h-5 w-5 text-primary" />
-                  <h3 className="font-semibold text-foreground">
-                    {vehicle.marca} {vehicle.modelo}
-                  </h3>
-                </div>
+              {/* Endereço */}
+              {client.endereco && (
                 <div className="space-y-2">
-                  <p className="text-foreground"><strong>Ano:</strong> {vehicle.ano}</p>
-                  {vehicle.placa && <p className="text-foreground"><strong>Placa:</strong> {vehicle.placa}</p>}
-                  {vehicle.cor && <p className="text-foreground"><strong>Cor:</strong> {vehicle.cor}</p>}
-                  {vehicle.chassi && <p className="text-foreground"><strong>Chassi:</strong> {vehicle.chassi}</p>}
-                  {vehicle.combustivel && <p className="text-foreground"><strong>Combustível:</strong> {vehicle.combustivel}</p>}
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    <Label className="font-medium">Endereço</Label>
+                  </div>
+                  <div className="bg-muted p-4 rounded-md">
+                    <p className="text-lg leading-relaxed">{client.endereco}</p>
+                  </div>
                 </div>
-              </Card>
-            ))}
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
-      )}
+
+        {/* Veículos */}
+        <div className="space-y-6">
+          {vehicles.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Car className="h-5 w-5" />
+                  Veículos
+                </CardTitle>
+                <CardDescription>
+                  Veículos cadastrados para este cliente
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {vehicles.map((vehicle, index) => (
+                  <div key={vehicle.id} className="space-y-3">
+                    {index > 0 && <Separator />}
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {vehicle.marca} {vehicle.modelo}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="font-medium text-muted-foreground">Ano:</span>
+                          <p className="font-medium">{vehicle.ano}</p>
+                        </div>
+                        {vehicle.placa && (
+                          <div>
+                            <span className="font-medium text-muted-foreground">Placa:</span>
+                            <p className="font-mono font-medium">{vehicle.placa}</p>
+                          </div>
+                        )}
+                        {vehicle.cor && (
+                          <div className="col-span-2">
+                            <div className="flex items-center gap-2">
+                              <Palette className="h-3 w-3 text-muted-foreground" />
+                              <span className="font-medium text-muted-foreground">Cor:</span>
+                            </div>
+                            <p className="font-medium">{vehicle.cor}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Car className="h-5 w-5" />
+                  Veículos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-6">
+                  <Car className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Nenhum veículo cadastrado</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-3"
+                    onClick={() => navigate(`/cliente/${id}/editar`)}
+                  >
+                    Cadastrar Veículo
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
