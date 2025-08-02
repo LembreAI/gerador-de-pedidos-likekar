@@ -37,8 +37,11 @@ export default function Orders() {
 
   // Recarregar pedidos quando a página carregar
   useEffect(() => {
+    console.log('🔄 Orders.tsx: Página de pedidos carregada, forçando reload...');
     reloadOrders();
   }, [reloadOrders]);
+
+  console.log('📊 Orders.tsx: Estado atual dos pedidos:', { orders, loading, ordersLength: orders.length });
   const filteredOrders = orders.filter(order => 
     order.cliente?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     order.id?.toLowerCase().includes(searchTerm.toLowerCase()) || 

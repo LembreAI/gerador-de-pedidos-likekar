@@ -23,6 +23,7 @@ export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const loadOrders = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Carregando pedidos...');
       
       // Buscar pedidos
       const { data: pedidosData, error: pedidosError } = await supabase
@@ -30,9 +31,14 @@ export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (pedidosError) throw pedidosError;
+      console.log('📊 Pedidos carregados:', pedidosData);
+      if (pedidosError) {
+        console.error('❌ Erro ao buscar pedidos:', pedidosError);
+        throw pedidosError;
+      }
 
       if (!pedidosData || pedidosData.length === 0) {
+        console.log('📭 Nenhum pedido encontrado');
         setOrders([]);
         return;
       }
@@ -40,15 +46,24 @@ export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // Buscar dados relacionados para cada pedido
       const ordersWithDetails = await Promise.all(
         pedidosData.map(async (pedido) => {
+          console.log(`🔍 Processando pedido ${pedido.id}...`);
+          
           const [clienteResult, veiculoResult, vendedorResult, instaladorResult, produtosResult] = await Promise.all([
-            pedido.cliente_id ? supabase.from('clientes').select('*').eq('id', pedido.cliente_id).single() : { data: null },
-            pedido.veiculo_id ? supabase.from('veiculos').select('*').eq('id', pedido.veiculo_id).single() : { data: null },
-            pedido.vendedor_id ? supabase.from('vendedores').select('*').eq('id', pedido.vendedor_id).single() : { data: null },
-            pedido.instalador_id ? supabase.from('instaladores').select('*').eq('id', pedido.instalador_id).single() : { data: null },
+            pedido.cliente_id ? supabase.from('clientes').select('*').eq('id', pedido.cliente_id).maybeSingle() : { data: null, error: null },
+            pedido.veiculo_id ? supabase.from('veiculos').select('*').eq('id', pedido.veiculo_id).maybeSingle() : { data: null, error: null },
+            pedido.vendedor_id ? supabase.from('vendedores').select('*').eq('id', pedido.vendedor_id).maybeSingle() : { data: null, error: null },
+            pedido.instalador_id ? supabase.from('instaladores').select('*').eq('id', pedido.instalador_id).maybeSingle() : { data: null, error: null },
             supabase.from('produtos_pedido').select('*').eq('pedido_id', pedido.id)
           ]);
 
-          return {
+          // Verificar se há erros nas consultas relacionadas
+          if ('error' in clienteResult && clienteResult.error) console.error('❌ Erro ao buscar cliente:', clienteResult.error);
+          if ('error' in veiculoResult && veiculoResult.error) console.error('❌ Erro ao buscar veículo:', veiculoResult.error);
+          if ('error' in vendedorResult && vendedorResult.error) console.error('❌ Erro ao buscar vendedor:', vendedorResult.error);
+          if ('error' in instaladorResult && instaladorResult.error) console.error('❌ Erro ao buscar instalador:', instaladorResult.error);
+          if ('error' in produtosResult && produtosResult.error) console.error('❌ Erro ao buscar produtos:', produtosResult.error);
+
+          const orderWithDetails = {
             ...pedido,
             cliente: clienteResult.data,
             veiculo: veiculoResult.data,
@@ -56,12 +71,16 @@ export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             instalador: instaladorResult.data,
             produtos: produtosResult.data || []
           };
+
+          console.log(`✅ Pedido ${pedido.id} processado:`, orderWithDetails);
+          return orderWithDetails;
         })
       );
 
+      console.log('🎉 Todos os pedidos processados:', ordersWithDetails);
       setOrders(ordersWithDetails);
     } catch (error) {
-      console.error('Error loading orders:', error);
+      console.error('💥 Error loading orders:', error);
     } finally {
       setLoading(false);
     }
