@@ -261,38 +261,36 @@ const Index = () => {
       
       console.log(`💰 Valor total calculado: R$ ${valorTotal.toFixed(2)}`);
 
-      // Gerar número único para o pedido se necessário
-      let numeroFinal = orderData.pedido.numero;
-      let attempts = 0;
-      const maxAttempts = 10;
+      // Verificar se já existe um pedido com este número
+      const numeroOriginal = orderData.pedido.numero;
+      console.log(`📝 Verificando se pedido ${numeroOriginal} já existe...`);
       
-      while (attempts < maxAttempts) {
-        const { data: existingOrder } = await supabase
-          .from('pedidos')
-          .select('id')
-          .eq('id', numeroFinal)
-          .maybeSingle();
+      const { data: existingOrder } = await supabase
+        .from('pedidos')
+        .select('id')
+        .eq('id', numeroOriginal)
+        .maybeSingle();
 
-        if (!existingOrder) {
-          break; // Número está disponível
-        }
+      if (existingOrder) {
+        console.log(`⚠️ Pedido ${numeroOriginal} já existe. Cancelando criação para evitar duplicatas.`);
         
-        // Gerar novo número incrementando
-        attempts++;
-        const baseNumber = parseInt(orderData.pedido.numero);
-        numeroFinal = (baseNumber + attempts).toString();
+        toast({
+          title: "Pedido já existe",
+          description: `O pedido ${numeroOriginal} já foi salvo anteriormente.`,
+          variant: "destructive"
+        });
+        
+        if (goToOrders) {
+          navigate('/pedidos');
+        }
+        return;
       }
 
-      if (attempts >= maxAttempts) {
-        // Se não conseguiu gerar número único, usar timestamp
-        numeroFinal = `${orderData.pedido.numero}-${Date.now()}`;
-      }
-
-      console.log(`📝 Usando número do pedido: ${numeroFinal}`);
+      console.log(`✅ Número ${numeroOriginal} está disponível, criando pedido...`);
 
       // Salvar o pedido
       const pedidoData = {
-        id: numeroFinal,
+        id: numeroOriginal,
         user_id: (await supabase.auth.getUser()).data.user?.id,
         cliente_id: clienteId,
         veiculo_id: veiculo.id,
@@ -374,7 +372,7 @@ const Index = () => {
 
       toast({
         title: "Pedido salvo com sucesso!",
-        description: `Pedido ${numeroFinal} foi criado.`
+        description: `Pedido ${numeroOriginal} foi criado.`
       });
 
       // Navegar para pedidos se solicitado
