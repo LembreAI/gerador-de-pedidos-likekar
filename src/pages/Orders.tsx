@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Eye, Edit, Trash2, Download, Filter } from "lucide-react";
+import { Search, Trash2, Printer, Filter } from "lucide-react";
 import { useOrders } from "@/contexts/OrdersContext";
 import { useToast } from "@/hooks/use-toast";
 import { generateLikeKarPDF } from "@/services/likeKarPDFGenerator";
@@ -55,28 +55,28 @@ export default function Orders() {
     order.id?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     `${order.veiculo?.marca} ${order.veiculo?.modelo}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  const handleDownloadPDF = async (order: any) => {
+  const handlePrintOrder = async (order: any) => {
     try {
       if (order.pdfBlob) {
         // Use the saved PDF blob
         const url = URL.createObjectURL(order.pdfBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Pedido_LikeKar_${order.numero}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const printWindow = window.open(url, '_blank');
+        if (printWindow) {
+          printWindow.addEventListener('load', () => {
+            printWindow.print();
+          });
+        }
         URL.revokeObjectURL(url);
       } else {
         // Regenerate PDF from saved data
         const orderData = {
-          cliente: order.extractedData.cliente,
-          pedido: order.extractedData.pedido,
-          produtos: order.extractedData.produtos,
-          veiculo: order.vehicleData,
+          cliente: order.extractedData?.cliente || {},
+          pedido: order.extractedData?.pedido || { numero: order.id },
+          produtos: order.produtos || [],
+          veiculo: order.veiculo || {},
           responsaveis: {
-            instalador: order.vehicleData.instalador,
-            vendedor: order.vehicleData.vendedor
+            instalador: order.instalador?.nome || '',
+            vendedor: order.vendedor?.nome || ''
           }
         };
         const pdfBytes = await generateLikeKarPDF(orderData);
@@ -84,23 +84,23 @@ export default function Orders() {
           type: 'application/pdf'
         });
         const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Pedido_LikeKar_${order.numero}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const printWindow = window.open(url, '_blank');
+        if (printWindow) {
+          printWindow.addEventListener('load', () => {
+            printWindow.print();
+          });
+        }
         URL.revokeObjectURL(url);
       }
       toast({
-        title: "PDF baixado com sucesso!",
-        description: `Pedido ${order.numero} foi baixado.`
+        title: "Imprimindo pedido",
+        description: `Pedido ${order.id} enviado para impressão.`
       });
     } catch (error) {
-      console.error('Erro ao baixar PDF:', error);
+      console.error('Erro ao imprimir pedido:', error);
       toast({
-        title: "Erro ao baixar PDF",
-        description: "Ocorreu um erro ao processar o download.",
+        title: "Erro ao imprimir",
+        description: "Ocorreu um erro ao preparar o pedido para impressão.",
         variant: "destructive"
       });
     }
@@ -190,22 +190,10 @@ export default function Orders() {
                             variant="ghost" 
                             size="sm" 
                             className="h-8 w-8 p-0" 
-                            title="Ver cliente"
-                            onClick={() => navigate(`/cliente/${order.cliente?.id}`)}
+                            title="Imprimir pedido"
+                            onClick={() => handlePrintOrder(order)}
                           >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 w-8 p-0" 
-                            title="Editar cliente"
-                            onClick={() => navigate(`/cliente/${order.cliente?.id}/editar`)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Baixar PDF" onClick={() => handleDownloadPDF(order)}>
-                            <Download className="h-4 w-4" />
+                            <Printer className="h-4 w-4" />
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
