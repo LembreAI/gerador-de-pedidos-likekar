@@ -288,7 +288,7 @@ const Index = () => {
 
       console.log(`✅ Número ${numeroOriginal} está disponível, criando pedido...`);
 
-      // Salvar o pedido
+      // Salvar o pedido com dados originais do PDF
       const pedidoData = {
         id: numeroOriginal,
         user_id: (await supabase.auth.getUser()).data.user?.id,
@@ -300,7 +300,8 @@ const Index = () => {
         status: 'pendente',
         responsavel_nome: orderData.cliente.nome,
         responsavel_telefone: orderData.cliente.telefone || '',
-        observacoes: orderData.observacoes || ''
+        observacoes: orderData.observacoes || '',
+        dados_pdf_original: JSON.stringify(orderData) // Salvar dados originais do PDF
       };
 
       const { data: pedido, error: pedidoError } = await supabase

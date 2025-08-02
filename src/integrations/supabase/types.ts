@@ -147,6 +147,7 @@ export type Database = {
         Row: {
           cliente_id: string
           created_at: string
+          dados_pdf_original: Json | null
           data_instalacao: string | null
           id: string
           instalador_id: string | null
@@ -165,6 +166,7 @@ export type Database = {
         Insert: {
           cliente_id: string
           created_at?: string
+          dados_pdf_original?: Json | null
           data_instalacao?: string | null
           id: string
           instalador_id?: string | null
@@ -183,6 +185,7 @@ export type Database = {
         Update: {
           cliente_id?: string
           created_at?: string
+          dados_pdf_original?: Json | null
           data_instalacao?: string | null
           id?: string
           instalador_id?: string | null

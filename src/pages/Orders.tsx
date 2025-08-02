@@ -72,48 +72,71 @@ export default function Orders() {
         throw new Error('Não foi possível carregar os detalhes do pedido');
       }
       
-      // Preparar dados do pedido para impressão com a estrutura correta da interface PedidoData
-      const orderData: PedidoData = {
-        cliente: {
-          nome: orderDetails.cliente?.nome || orderDetails.responsavel_nome || 'Cliente não identificado',
-          empresa: orderDetails.cliente?.nome || '',
-          telefone: orderDetails.cliente?.telefone || orderDetails.responsavel_telefone || '',
-          email: orderDetails.cliente?.email || '',
-          endereco: orderDetails.cliente?.endereco || '',
-          cnpj: orderDetails.cliente?.cpf_cnpj || ''
-        },
-        pedido: {
-          numero: orderDetails.id || 'N/A',
-          data: new Date(orderDetails.created_at).toLocaleDateString('pt-BR') || new Date().toLocaleDateString('pt-BR'),
-          formaPagamento: 'À vista'
-        },
-        produtos: (orderDetails.produtos || []).map((produto: any) => {
-          const valorUnitario = produto.valor_unitario || 0;
-          const quantidade = produto.quantidade || 1;
-          const total = valorUnitario * quantidade;
-          
-          return {
-            descricao: produto.descricao || 'Produto',
-            codigo: '001', // Valor padrão
-            quantidade: quantidade,
-            unitario: valorUnitario,
-            desconto: 0, // Valor padrão
-            total: total
-          };
-        }),
-        veiculo: {
-          marca: orderDetails.veiculo?.marca || '',
-          modelo: orderDetails.veiculo?.modelo || '',
-          cor: orderDetails.veiculo?.cor || '',
-          ano: orderDetails.veiculo?.ano?.toString() || '',
-          placa: orderDetails.veiculo?.placa || ''
-        },
-        responsaveis: {
-          instalador: orderDetails.instalador?.nome || 'Não definido',
-          vendedor: orderDetails.vendedor?.nome || 'Não definido'
-        },
-        observacoes: orderDetails.observacoes || ''
-      };
+      // Usar dados originais do PDF se disponíveis, senão usar dados do banco
+      let orderData: PedidoData;
+      
+      if (orderDetails.dados_pdf_original) {
+        console.log('📄 Usando dados originais do PDF para impressão');
+        orderData = JSON.parse(orderDetails.dados_pdf_original);
+        
+        // Atualizar dados que podem ter mudado
+        orderData.veiculo = {
+          marca: orderDetails.veiculo?.marca || orderData.veiculo.marca,
+          modelo: orderDetails.veiculo?.modelo || orderData.veiculo.modelo,
+          cor: orderDetails.veiculo?.cor || orderData.veiculo.cor,
+          ano: orderDetails.veiculo?.ano?.toString() || orderData.veiculo.ano,
+          placa: orderDetails.veiculo?.placa || orderData.veiculo.placa
+        };
+        
+        orderData.responsaveis = {
+          instalador: orderDetails.instalador?.nome || orderData.responsaveis.instalador,
+          vendedor: orderDetails.vendedor?.nome || orderData.responsaveis.vendedor
+        };
+      } else {
+        console.log('⚠️ Dados originais do PDF não encontrados, usando dados do banco');
+        // Preparar dados do pedido para impressão com a estrutura correta da interface PedidoData
+        orderData = {
+          cliente: {
+            nome: orderDetails.cliente?.nome || orderDetails.responsavel_nome || 'Cliente não identificado',
+            empresa: orderDetails.cliente?.nome || '',
+            telefone: orderDetails.cliente?.telefone || orderDetails.responsavel_telefone || '',
+            email: orderDetails.cliente?.email || '',
+            endereco: orderDetails.cliente?.endereco || '',
+            cnpj: orderDetails.cliente?.cpf_cnpj || ''
+          },
+          pedido: {
+            numero: orderDetails.id || 'N/A',
+            data: new Date(orderDetails.created_at).toLocaleDateString('pt-BR') || new Date().toLocaleDateString('pt-BR'),
+            formaPagamento: 'À vista'
+          },
+          produtos: (orderDetails.produtos || []).map((produto: any) => {
+            const valorUnitario = produto.valor_unitario || 0;
+            const quantidade = produto.quantidade || 1;
+            const total = valorUnitario * quantidade;
+            
+            return {
+              descricao: produto.descricao || 'Produto',
+              codigo: '001', // Valor padrão
+              quantidade: quantidade,
+              unitario: valorUnitario,
+              desconto: 0, // Valor padrão
+              total: total
+            };
+          }),
+          veiculo: {
+            marca: orderDetails.veiculo?.marca || '',
+            modelo: orderDetails.veiculo?.modelo || '',
+            cor: orderDetails.veiculo?.cor || '',
+            ano: orderDetails.veiculo?.ano?.toString() || '',
+            placa: orderDetails.veiculo?.placa || ''
+          },
+          responsaveis: {
+            instalador: orderDetails.instalador?.nome || 'Não definido',
+            vendedor: orderDetails.vendedor?.nome || 'Não definido'
+          },
+          observacoes: orderDetails.observacoes || ''
+        };
+      }
 
       console.log('📋 Dados formatados para PDF:', orderData);
         
