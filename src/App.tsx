@@ -8,8 +8,10 @@ import { OrdersProvider } from "@/contexts/OrdersContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { VendedoresProvider } from "@/contexts/VendedoresContext";
 import { InstalladoresProvider } from "@/contexts/InstalladoresContext";
+import { ClientesProvider } from "@/contexts/ClientesContext";
 import Index from "./pages/Index";
 import Orders from "./pages/Orders";
+import Clients from "./pages/Clients";
 import Vendors from "./pages/Vendors";
 import Installers from "./pages/Installers";
 import Settings from "./pages/Settings";
@@ -26,7 +28,8 @@ const App = () => (
     <AuthProvider>
       <VendedoresProvider>
         <InstalladoresProvider>
-          <OrdersProvider>
+          <ClientesProvider>
+            <OrdersProvider>
             <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -35,7 +38,8 @@ const App = () => (
                 <Routes>
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                  <Route path="/pedidos" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+                   <Route path="/pedidos" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+                   <Route path="/clientes" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
                   <Route path="/cliente/:id" element={<ProtectedRoute><ClientDetails /></ProtectedRoute>} />
                   <Route path="/cliente/:id/editar" element={<ProtectedRoute><ClientEdit /></ProtectedRoute>} />
                   <Route path="/vendedores" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
@@ -46,10 +50,11 @@ const App = () => (
                 </Routes>
               </Layout>
             </BrowserRouter>
-          </TooltipProvider>
-          </OrdersProvider>
-        </InstalladoresProvider>
-      </VendedoresProvider>
+           </TooltipProvider>
+           </OrdersProvider>
+          </ClientesProvider>
+         </InstalladoresProvider>
+       </VendedoresProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

@@ -16,6 +16,11 @@ const menuItems = [{
   icon: FileText,
   path: "/pedidos"
 }, {
+  id: "clientes",
+  label: "Clientes",
+  icon: Users,
+  path: "/clientes"
+}, {
   id: "vendedores",
   label: "Vendedores",
   icon: Users,
