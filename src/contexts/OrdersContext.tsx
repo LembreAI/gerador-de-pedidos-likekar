@@ -5,7 +5,7 @@ interface OrdersContextType {
   orders: any[];
   loading: boolean;
   reloadOrders: () => Promise<void>;
-  getOrderWithDetails: (id: string) => any | undefined;
+  getOrderWithDetails: (id: string) => Promise<any | null>;
   deleteOrder: (id: string) => Promise<void>;
 }
 
@@ -86,8 +86,59 @@ export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  const getOrderWithDetails = (id: string) => {
-    return orders.find(order => order.id === id);
+  const getOrderWithDetails = async (id: string) => {
+    try {
+      console.log(`🔍 Buscando detalhes do pedido ${id}...`);
+      
+      // Buscar o pedido específico
+      const { data: pedido, error: pedidoError } = await supabase
+        .from('pedidos')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (pedidoError) {
+        console.error('❌ Erro ao buscar pedido:', pedidoError);
+        throw pedidoError;
+      }
+
+      if (!pedido) {
+        console.log('📭 Pedido não encontrado');
+        return null;
+      }
+
+      // Buscar dados relacionados
+      const [clienteResult, veiculoResult, vendedorResult, instaladorResult, produtosResult] = await Promise.all([
+        pedido.cliente_id ? supabase.from('clientes').select('*').eq('id', pedido.cliente_id).maybeSingle() : { data: null, error: null },
+        pedido.veiculo_id ? supabase.from('veiculos').select('*').eq('id', pedido.veiculo_id).maybeSingle() : { data: null, error: null },
+        pedido.vendedor_id ? supabase.from('vendedores').select('*').eq('id', pedido.vendedor_id).maybeSingle() : { data: null, error: null },
+        pedido.instalador_id ? supabase.from('instaladores').select('*').eq('id', pedido.instalador_id).maybeSingle() : { data: null, error: null },
+        supabase.from('produtos_pedido').select('*').eq('pedido_id', pedido.id)
+      ]);
+
+      // Verificar se há erros nas consultas relacionadas
+      if ('error' in clienteResult && clienteResult.error) console.error('❌ Erro ao buscar cliente:', clienteResult.error);
+      if ('error' in veiculoResult && veiculoResult.error) console.error('❌ Erro ao buscar veículo:', veiculoResult.error);
+      if ('error' in vendedorResult && vendedorResult.error) console.error('❌ Erro ao buscar vendedor:', vendedorResult.error);
+      if ('error' in instaladorResult && instaladorResult.error) console.error('❌ Erro ao buscar instalador:', instaladorResult.error);
+      if ('error' in produtosResult && produtosResult.error) console.error('❌ Erro ao buscar produtos:', produtosResult.error);
+
+      const orderWithDetails = {
+        ...pedido,
+        cliente: clienteResult.data,
+        veiculo: veiculoResult.data,
+        vendedor: vendedorResult.data,
+        instalador: instaladorResult.data,
+        produtos: produtosResult.data || []
+      };
+
+      console.log(`✅ Detalhes do pedido ${id} carregados:`, orderWithDetails);
+      return orderWithDetails;
+      
+    } catch (error) {
+      console.error('💥 Erro ao buscar detalhes do pedido:', error);
+      return null;
+    }
   };
 
   const deleteOrder = async (id: string) => {
