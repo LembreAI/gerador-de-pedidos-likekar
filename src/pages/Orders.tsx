@@ -8,7 +8,7 @@ import { Search, Eye, Edit, Trash2, Download, Filter } from "lucide-react";
 import { useOrders } from "@/contexts/OrdersContext";
 import { useToast } from "@/hooks/use-toast";
 import { generateLikeKarPDF } from "@/services/likeKarPDFGenerator";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -26,13 +26,19 @@ export default function Orders() {
   const {
     orders,
     loading,
-    deleteOrder
+    deleteOrder,
+    reloadOrders
   } = useOrders();
   const {
     toast
   } = useToast();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Recarregar pedidos quando a página carregar
+  useEffect(() => {
+    reloadOrders();
+  }, [reloadOrders]);
   const filteredOrders = orders.filter(order => 
     order.cliente?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     order.id?.toLowerCase().includes(searchTerm.toLowerCase()) || 

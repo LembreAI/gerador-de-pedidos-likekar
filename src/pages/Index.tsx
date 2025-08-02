@@ -22,6 +22,7 @@ const steps = [
 ];
 
 const Index = () => {
+  const { reloadOrders } = useOrders();
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -117,6 +118,8 @@ const Index = () => {
       });
 
       if (saveAndGoToOrders) {
+        // Recarregar a lista de pedidos antes de navegar
+        await reloadOrders();
         setTimeout(() => navigate('/pedidos'), 1000);
       }
     } catch (error) {
