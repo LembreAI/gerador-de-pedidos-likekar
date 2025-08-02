@@ -45,6 +45,63 @@ const ClientEdit = () => {
     loadClientData();
   }, [id]);
 
+  // Função para buscar endereço por CEP
+  const fetchAddressByCEP = async (cep: string) => {
+    if (cep.replace(/\D/g, '').length === 8) {
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep.replace(/\D/g, '')}/json/`);
+        const data = await response.json();
+        
+        if (!data.erro) {
+          setClientData(prev => ({
+            ...prev,
+            endereco: data.logradouro || '',
+            cidade: data.localidade || '',
+            estado: data.uf || '',
+            cep: data.cep || cep
+          }));
+        }
+      } catch (error) {
+        console.error('Erro ao buscar CEP:', error);
+      }
+    }
+  };
+
+  // Função para extrair informações do endereço completo
+  const extractAddressInfo = (fullAddress: string) => {
+    if (!fullAddress) return;
+
+    // Regex para extrair CEP (formato 00000-000 ou 00000000)
+    const cepMatch = fullAddress.match(/\b\d{5}-?\d{3}\b/);
+    if (cepMatch) {
+      const cep = cepMatch[0];
+      fetchAddressByCEP(cep);
+      return;
+    }
+
+    // Se não tem CEP, tenta extrair cidade e estado
+    const parts = fullAddress.split(/[,-]/).map(part => part.trim());
+    if (parts.length >= 2) {
+      // Último item pode ser estado (UF)
+      const lastPart = parts[parts.length - 1];
+      if (lastPart.length === 2 && /^[A-Z]{2}$/.test(lastPart.toUpperCase())) {
+        setClientData(prev => ({
+          ...prev,
+          estado: lastPart.toUpperCase(),
+          cidade: parts[parts.length - 2] || '',
+          endereco: parts.slice(0, -2).join(', ') || parts[0]
+        }));
+      } else {
+        // Se não tem UF, considera que a cidade pode ser o último ou penúltimo item
+        setClientData(prev => ({
+          ...prev,
+          cidade: parts[parts.length - 1] || '',
+          endereco: parts.slice(0, -1).join(', ') || parts[0]
+        }));
+      }
+    }
+  };
+
   const loadClientData = async () => {
     try {
       setLoading(true);
@@ -253,16 +310,47 @@ const ClientEdit = () => {
               </h4>
               
               <div className="space-y-2">
-                <Label htmlFor="endereco">Logradouro</Label>
+                <Label htmlFor="cep">CEP (busca automática)</Label>
                 <Input
-                  id="endereco"
-                  placeholder="Rua, Avenida, etc."
-                  value={clientData.endereco}
-                  onChange={(e) => setClientData({ ...clientData, endereco: e.target.value })}
+                  id="cep"
+                  placeholder="00000-000"
+                  value={clientData.cep}
+                  onChange={(e) => {
+                    const cep = e.target.value;
+                    setClientData({ ...clientData, cep });
+                    if (cep.replace(/\D/g, '').length === 8) {
+                      fetchAddressByCEP(cep);
+                    }
+                  }}
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="endereco">
+                  Endereço Completo 
+                  <span className="text-xs text-muted-foreground ml-2">
+                    (Cole o endereço completo para extração automática)
+                  </span>
+                </Label>
+                <Input
+                  id="endereco"
+                  placeholder="Cole o endereço completo aqui ou digite apenas o logradouro"
+                  value={clientData.endereco}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setClientData({ ...clientData, endereco: value });
+                  }}
+                  onBlur={(e) => {
+                    const value = e.target.value;
+                    // Se o endereço parece ser completo (tem vírgula ou traço), tenta extrair
+                    if (value.includes(',') || value.includes('-') || /\d{5}-?\d{3}/.test(value)) {
+                      extractAddressInfo(value);
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="cidade">Cidade</Label>
                   <Input
@@ -279,17 +367,8 @@ const ClientEdit = () => {
                     id="estado"
                     placeholder="UF"
                     value={clientData.estado}
-                    onChange={(e) => setClientData({ ...clientData, estado: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="cep">CEP</Label>
-                  <Input
-                    id="cep"
-                    placeholder="00000-000"
-                    value={clientData.cep}
-                    onChange={(e) => setClientData({ ...clientData, cep: e.target.value })}
+                    onChange={(e) => setClientData({ ...clientData, estado: e.target.value.toUpperCase() })}
+                    maxLength={2}
                   />
                 </div>
               </div>
