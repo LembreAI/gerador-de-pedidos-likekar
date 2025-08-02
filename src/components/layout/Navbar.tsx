@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlusCircle, FileText, Users, Wrench, Settings, Menu, X, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 const menuItems = [{
   id: "novo-pedido",
   label: "Novo Pedido",
@@ -31,6 +32,12 @@ const menuItems = [{
   path: "/configuracoes"
 }];
 export function Navbar() {
+  const { user, signOut } = useAuth();
+
+  const getUserInitials = () => {
+    if (!user?.email) return "U";
+    return user.email.substring(0, 2).toUpperCase();
+  };
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -108,20 +115,20 @@ export function Navbar() {
               <Avatar className="h-10 w-10 border-2 border-primary/20 flex-shrink-0">
                 <AvatarImage src="" />
                 <AvatarFallback className="bg-primary text-primary-foreground text-sm font-bold">
-                  JS
+                  {getUserInitials()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground truncate">
-                  João Silva
+                  {user?.email || "Usuário"}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  Vendedor
+                  Administrador
                 </p>
               </div>
             </div>
             
-            <Button variant="ghost" size="sm" className="w-full justify-start gap-3 mt-3 h-12 text-muted-foreground hover:text-foreground rounded-xl">
+            <Button variant="ghost" size="sm" className="w-full justify-start gap-3 mt-3 h-12 text-muted-foreground hover:text-foreground rounded-xl" onClick={signOut}>
               <LogOut className="h-4 w-4" />
               <span className="text-sm font-medium">Sair da Conta</span>
             </Button>

@@ -13,7 +13,9 @@ import Orders from "./pages/Orders";
 import Vendors from "./pages/Vendors";
 import Installers from "./pages/Installers";
 import Settings from "./pages/Settings";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -29,11 +31,12 @@ const App = () => (
               <BrowserRouter>
                 <Layout>
                 <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/pedidos" element={<Orders />} />
-                  <Route path="/vendedores" element={<Vendors />} />
-                  <Route path="/instaladores" element={<Installers />} />
-                  <Route path="/configuracoes" element={<Settings />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                  <Route path="/pedidos" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+                  <Route path="/vendedores" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
+                  <Route path="/instaladores" element={<ProtectedRoute><Installers /></ProtectedRoute>} />
+                  <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
