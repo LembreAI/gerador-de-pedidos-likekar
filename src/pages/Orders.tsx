@@ -27,7 +27,8 @@ export default function Orders() {
     orders,
     loading,
     deleteOrder,
-    reloadOrders
+    reloadOrders,
+    getOrderWithDetails
   } = useOrders();
   const {
     toast
@@ -60,51 +61,58 @@ export default function Orders() {
       console.log('🖨️ Iniciando impressão do pedido:', order.id);
       setLocalLoading(true);
       
-      // Sempre gerar PDF a partir dos dados para garantir formato consistente
-        console.log('🔄 Regenerando PDF a partir dos dados');
-        // Preparar dados do pedido para impressão usando a mesma estrutura da página Index
-        const orderData: PedidoData = {
-          cliente: {
-            nome: order.cliente?.nome || order.responsavel_nome || 'Cliente não identificado',
-            telefone: order.cliente?.telefone || order.responsavel_telefone || '',
-            email: order.cliente?.email || '',
-            endereco: order.cliente?.endereco || '',
-            cnpj: order.cliente?.cpf_cnpj || ''
-          },
-          pedido: {
-            numero: order.id || 'N/A',
-            data: new Date(order.created_at).toLocaleDateString('pt-BR') || new Date().toLocaleDateString('pt-BR'),
-            formaPagamento: 'À vista'
-          },
-          produtos: (order.produtos || []).map((produto: any) => {
-            const valorUnitario = produto.valor_unitario || 0;
-            const quantidade = produto.quantidade || 1;
-            const total = valorUnitario * quantidade;
-            
-            return {
-              descricao: produto.descricao || 'Produto',
-              codigo: '001', // Valor padrão
-              quantidade: quantidade,
-              unitario: valorUnitario,
-              desconto: 0, // Valor padrão
-              total: total
-            };
-          }),
-          veiculo: {
-            marca: order.veiculo?.marca || '',
-            modelo: order.veiculo?.modelo || '',
-            ano: order.veiculo?.ano || '',
-            placa: order.veiculo?.placa || '',
-            cor: order.veiculo?.cor || ''
-          },
-          responsaveis: {
-            instalador: order.instalador?.nome || 'Não definido',
-            vendedor: order.vendedor?.nome || 'Não definido'
-          },
-          observacoes: order.observacoes || ''
-        };
+      // Buscar detalhes completos do pedido
+      const orderDetails = await getOrderWithDetails(order.id);
+      console.log('📊 Detalhes completos do pedido:', orderDetails);
+      
+      if (!orderDetails) {
+        throw new Error('Não foi possível carregar os detalhes do pedido');
+      }
+      
+      // Preparar dados do pedido para impressão com a estrutura correta da interface PedidoData
+      const orderData: PedidoData = {
+        cliente: {
+          nome: orderDetails.cliente?.nome || orderDetails.responsavel_nome || 'Cliente não identificado',
+          empresa: orderDetails.cliente?.nome || '',
+          telefone: orderDetails.cliente?.telefone || orderDetails.responsavel_telefone || '',
+          email: orderDetails.cliente?.email || '',
+          endereco: orderDetails.cliente?.endereco || '',
+          cnpj: orderDetails.cliente?.cpf_cnpj || ''
+        },
+        pedido: {
+          numero: orderDetails.id || 'N/A',
+          data: new Date(orderDetails.created_at).toLocaleDateString('pt-BR') || new Date().toLocaleDateString('pt-BR'),
+          formaPagamento: 'À vista'
+        },
+        produtos: (orderDetails.produtos || []).map((produto: any) => {
+          const valorUnitario = produto.valor_unitario || 0;
+          const quantidade = produto.quantidade || 1;
+          const total = valorUnitario * quantidade;
+          
+          return {
+            descricao: produto.descricao || 'Produto',
+            codigo: '001', // Valor padrão
+            quantidade: quantidade,
+            unitario: valorUnitario,
+            desconto: 0, // Valor padrão
+            total: total
+          };
+        }),
+        veiculo: {
+          marca: orderDetails.veiculo?.marca || '',
+          modelo: orderDetails.veiculo?.modelo || '',
+          cor: orderDetails.veiculo?.cor || '',
+          ano: orderDetails.veiculo?.ano?.toString() || '',
+          placa: orderDetails.veiculo?.placa || ''
+        },
+        responsaveis: {
+          instalador: orderDetails.instalador?.nome || 'Não definido',
+          vendedor: orderDetails.vendedor?.nome || 'Não definido'
+        },
+        observacoes: orderDetails.observacoes || ''
+      };
 
-        console.log('📋 Dados preparados para PDF:', orderData);
+      console.log('📋 Dados formatados para PDF:', orderData);
         
         const pdfBytes = await generateLikeKarPDF(orderData);
         const blob = new Blob([pdfBytes], {
