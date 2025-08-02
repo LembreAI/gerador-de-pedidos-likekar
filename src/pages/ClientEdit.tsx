@@ -1,58 +1,94 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ArrowLeft, Save } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { ArrowLeft, User, Car, Save, Phone, Mail, MapPin, CreditCard } from 'lucide-react';
 
-export default function ClientEdit() {
+const ClientEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState({
+  
+  const [clientData, setClientData] = useState({
     nome: '',
     telefone: '',
     email: '',
-    cpf_cnpj: '',
     endereco: '',
     cidade: '',
     estado: '',
-    cep: ''
+    cep: '',
+    cpf_cnpj: ''
   });
 
+  const [vehicleData, setVehicleData] = useState({
+    marca: '',
+    modelo: '',
+    ano: '',
+    placa: '',
+    cor: '',
+    chassi: '',
+    combustivel: ''
+  });
+
+  const [vehicleId, setVehicleId] = useState<string>('');
+
   useEffect(() => {
-    if (id) {
-      loadClientData();
-    }
+    loadClientData();
   }, [id]);
 
   const loadClientData = async () => {
     try {
       setLoading(true);
       
-      const { data: clientData, error } = await supabase
+      // Buscar dados do cliente
+      const { data: client, error: clientError } = await supabase
         .from('clientes')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      if (clientError) throw clientError;
 
-      setFormData({
-        nome: clientData.nome || '',
-        telefone: clientData.telefone || '',
-        email: clientData.email || '',
-        cpf_cnpj: clientData.cpf_cnpj || '',
-        endereco: clientData.endereco || '',
-        cidade: clientData.cidade || '',
-        estado: clientData.estado || '',
-        cep: clientData.cep || ''
+      setClientData({
+        nome: client.nome || '',
+        telefone: client.telefone || '',
+        email: client.email || '',
+        endereco: client.endereco || '',
+        cidade: client.cidade || '',
+        estado: client.estado || '',
+        cep: client.cep || '',
+        cpf_cnpj: client.cpf_cnpj || ''
       });
+
+      // Buscar dados do veículo
+      const { data: vehicle, error: vehicleError } = await supabase
+        .from('veiculos')
+        .select('*')
+        .eq('cliente_id', id)
+        .maybeSingle();
+
+      if (vehicle) {
+        setVehicleId(vehicle.id);
+        setVehicleData({
+          marca: vehicle.marca || '',
+          modelo: vehicle.modelo || '',
+          ano: vehicle.ano?.toString() || '',
+          placa: vehicle.placa || '',
+          cor: vehicle.cor || '',
+          chassi: vehicle.chassi || '',
+          combustivel: vehicle.combustivel || ''
+        });
+      }
+
     } catch (error) {
       console.error('Error loading client data:', error);
       toast({
@@ -68,25 +104,52 @@ export default function ClientEdit() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      
-      const { error } = await supabase
+
+      // Atualizar dados do cliente
+      const { error: clientError } = await supabase
         .from('clientes')
-        .update(formData)
+        .update(clientData)
         .eq('id', id);
 
-      if (error) throw error;
+      if (clientError) throw clientError;
+
+      // Atualizar ou criar veículo
+      if (vehicleId) {
+        // Atualizar veículo existente
+        const { error: vehicleError } = await supabase
+          .from('veiculos')
+          .update({
+            ...vehicleData,
+            ano: vehicleData.ano ? parseInt(vehicleData.ano) : null
+          })
+          .eq('id', vehicleId);
+
+        if (vehicleError) throw vehicleError;
+      } else if (vehicleData.marca || vehicleData.modelo) {
+        // Criar novo veículo se algum campo foi preenchido
+        const { error: vehicleError } = await supabase
+          .from('veiculos')
+          .insert({
+            ...vehicleData,
+            ano: vehicleData.ano ? parseInt(vehicleData.ano) : null,
+            cliente_id: id
+          });
+
+        if (vehicleError) throw vehicleError;
+      }
 
       toast({
-        title: "Cliente atualizado",
-        description: "Os dados do cliente foram salvos com sucesso."
+        title: "Dados atualizados!",
+        description: "As informações do cliente foram salvas com sucesso."
       });
 
       navigate(`/cliente/${id}`);
+
     } catch (error) {
       console.error('Error updating client:', error);
       toast({
         title: "Erro ao salvar",
-        description: "Não foi possível salvar os dados do cliente.",
+        description: "Não foi possível salvar as alterações.",
         variant: "destructive"
       });
     } finally {
@@ -94,140 +157,288 @@ export default function ClientEdit() {
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate(`/cliente/${id}`)}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
-          </Button>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center h-40">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Carregando dados...</p>
+          </div>
         </div>
-        <Card className="p-8 text-center">
-          <p className="text-muted-foreground">Carregando dados do cliente...</p>
-        </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate(`/cliente/${id}`)}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
-          </Button>
-        </div>
-        <Button onClick={handleSave} disabled={saving}>
-          <Save className="h-4 w-4 mr-2" />
-          {saving ? 'Salvando...' : 'Salvar'}
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(`/cliente/${id}`)}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
         </Button>
+        <div>
+          <h1 className="text-2xl font-bold">Editar Cliente</h1>
+          <p className="text-muted-foreground">Atualize as informações do cliente e veículo</p>
+        </div>
       </div>
 
-      {/* Form */}
-      <Card className="p-6">
-        <h1 className="text-2xl font-bold text-foreground mb-6">Editar Cliente</h1>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="nome">Nome *</Label>
-            <Input
-              id="nome"
-              value={formData.nome}
-              onChange={(e) => handleInputChange('nome', e.target.value)}
-              placeholder="Nome completo"
-            />
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Dados do Cliente */}
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Dados Pessoais
+            </CardTitle>
+            <CardDescription>
+              Informações básicas do cliente
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="nome" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Nome Completo
+              </Label>
+              <Input
+                id="nome"
+                placeholder="Digite o nome completo"
+                value={clientData.nome}
+                onChange={(e) => setClientData({ ...clientData, nome: e.target.value })}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="telefone">Telefone</Label>
-            <Input
-              id="telefone"
-              value={formData.telefone}
-              onChange={(e) => handleInputChange('telefone', e.target.value)}
-              placeholder="(11) 99999-9999"
-            />
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="telefone" className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  Telefone
+                </Label>
+                <Input
+                  id="telefone"
+                  placeholder="(00) 00000-0000"
+                  value={clientData.telefone}
+                  onChange={(e) => setClientData({ ...clientData, telefone: e.target.value })}
+                />
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              placeholder="email@exemplo.com"
-            />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  E-mail
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="email@exemplo.com"
+                  value={clientData.email}
+                  onChange={(e) => setClientData({ ...clientData, email: e.target.value })}
+                />
+              </div>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="cpf_cnpj">CPF/CNPJ</Label>
-            <Input
-              id="cpf_cnpj"
-              value={formData.cpf_cnpj}
-              onChange={(e) => handleInputChange('cpf_cnpj', e.target.value)}
-              placeholder="000.000.000-00"
-            />
-          </div>
+            <Separator />
 
-          <div className="space-y-2">
-            <Label htmlFor="cep">CEP</Label>
-            <Input
-              id="cep"
-              value={formData.cep}
-              onChange={(e) => handleInputChange('cep', e.target.value)}
-              placeholder="00000-000"
-            />
-          </div>
+            <div className="space-y-4">
+              <h4 className="font-medium flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                Endereço
+              </h4>
+              
+              <div className="space-y-2">
+                <Label htmlFor="endereco">Logradouro</Label>
+                <Input
+                  id="endereco"
+                  placeholder="Rua, Avenida, etc."
+                  value={clientData.endereco}
+                  onChange={(e) => setClientData({ ...clientData, endereco: e.target.value })}
+                />
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="cidade">Cidade</Label>
-            <Input
-              id="cidade"
-              value={formData.cidade}
-              onChange={(e) => handleInputChange('cidade', e.target.value)}
-              placeholder="Nome da cidade"
-            />
-          </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="cidade">Cidade</Label>
+                  <Input
+                    id="cidade"
+                    placeholder="Cidade"
+                    value={clientData.cidade}
+                    onChange={(e) => setClientData({ ...clientData, cidade: e.target.value })}
+                  />
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="estado">Estado</Label>
-            <Input
-              id="estado"
-              value={formData.estado}
-              onChange={(e) => handleInputChange('estado', e.target.value)}
-              placeholder="SP"
-            />
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="estado">Estado</Label>
+                  <Input
+                    id="estado"
+                    placeholder="UF"
+                    value={clientData.estado}
+                    onChange={(e) => setClientData({ ...clientData, estado: e.target.value })}
+                  />
+                </div>
 
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="endereco">Endereço</Label>
-            <Input
-              id="endereco"
-              value={formData.endereco}
-              onChange={(e) => handleInputChange('endereco', e.target.value)}
-              placeholder="Rua, número, bairro"
-            />
-          </div>
-        </div>
-      </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="cep">CEP</Label>
+                  <Input
+                    id="cep"
+                    placeholder="00000-000"
+                    value={clientData.cep}
+                    onChange={(e) => setClientData({ ...clientData, cep: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <Label htmlFor="cpf_cnpj" className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                CPF/CNPJ
+              </Label>
+              <Input
+                id="cpf_cnpj"
+                placeholder="000.000.000-00"
+                value={clientData.cpf_cnpj}
+                onChange={(e) => setClientData({ ...clientData, cpf_cnpj: e.target.value })}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Dados do Veículo */}
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Car className="h-5 w-5" />
+              Dados do Veículo
+            </CardTitle>
+            <CardDescription>
+              Informações do veículo do cliente
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="marca">Marca</Label>
+                <Input
+                  id="marca"
+                  placeholder="Ex: Toyota, Honda"
+                  value={vehicleData.marca}
+                  onChange={(e) => setVehicleData({ ...vehicleData, marca: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="modelo">Modelo</Label>
+                <Input
+                  id="modelo"
+                  placeholder="Ex: Corolla, Civic"
+                  value={vehicleData.modelo}
+                  onChange={(e) => setVehicleData({ ...vehicleData, modelo: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="ano">Ano</Label>
+                <Input
+                  id="ano"
+                  placeholder="2023"
+                  value={vehicleData.ano}
+                  onChange={(e) => setVehicleData({ ...vehicleData, ano: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cor">Cor</Label>
+                <Input
+                  id="cor"
+                  placeholder="Ex: Branco, Prata"
+                  value={vehicleData.cor}
+                  onChange={(e) => setVehicleData({ ...vehicleData, cor: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="placa">Placa</Label>
+                <Input
+                  id="placa"
+                  placeholder="ABC-1234"
+                  value={vehicleData.placa}
+                  onChange={(e) => setVehicleData({ ...vehicleData, placa: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <h4 className="font-medium">Informações Adicionais</h4>
+              
+              <div className="space-y-2">
+                <Label htmlFor="chassi">Chassi</Label>
+                <Input
+                  id="chassi"
+                  placeholder="Número do chassi"
+                  value={vehicleData.chassi}
+                  onChange={(e) => setVehicleData({ ...vehicleData, chassi: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="combustivel">Combustível</Label>
+                <Input
+                  id="combustivel"
+                  placeholder="Gasolina, Etanol, Flex"
+                  value={vehicleData.combustivel}
+                  onChange={(e) => setVehicleData({ ...vehicleData, combustivel: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {vehicleId && (
+              <div className="flex items-center gap-2 mt-4">
+                <Badge variant="secondary" className="text-xs">
+                  Veículo cadastrado
+                </Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-end gap-4 mt-8">
+        <Button
+          variant="outline"
+          onClick={() => navigate(`/cliente/${id}`)}
+          disabled={saving}
+        >
+          Cancelar
+        </Button>
+        <Button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-2"
+        >
+          {saving ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
+          {saving ? 'Salvando...' : 'Salvar Alterações'}
+        </Button>
+      </div>
     </div>
   );
-}
+};
+
+export default ClientEdit;

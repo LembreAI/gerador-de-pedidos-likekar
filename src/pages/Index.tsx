@@ -213,6 +213,17 @@ const Index = () => {
         return total + (valor * (produto.quantidade || 1));
       }, 0);
 
+      // Verificar se já existe um pedido com este número
+      const { data: existingOrder } = await supabase
+        .from('pedidos')
+        .select('id')
+        .eq('id', orderData.pedido.numero)
+        .maybeSingle();
+
+      if (existingOrder) {
+        throw new Error(`Já existe um pedido com o número ${orderData.pedido.numero}. Por favor, use um número diferente.`);
+      }
+
       // Salvar o pedido
       const pedidoData = {
         id: orderData.pedido.numero,
