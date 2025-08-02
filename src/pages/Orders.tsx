@@ -57,20 +57,10 @@ export default function Orders() {
   );
   const handlePrintOrder = async (order: any) => {
     try {
-      console.log('🖨️ Iniciando impressão do pedido:', order);
+      console.log('🖨️ Iniciando impressão do pedido:', order.id);
+      setLocalLoading(true);
       
-      if (order.pdfBlob) {
-        console.log('📄 Usando PDF salvo');
-        // Use the saved PDF blob
-        const url = URL.createObjectURL(order.pdfBlob);
-        const printWindow = window.open(url, '_blank');
-        if (printWindow) {
-          printWindow.addEventListener('load', () => {
-            printWindow.print();
-          });
-        }
-        URL.revokeObjectURL(url);
-      } else {
+      // Sempre gerar PDF a partir dos dados para garantir formato consistente
         console.log('🔄 Regenerando PDF a partir dos dados');
         // Preparar dados do pedido para impressão usando a mesma estrutura da página Index
         const orderData: PedidoData = {
@@ -86,11 +76,20 @@ export default function Orders() {
             data: new Date(order.created_at).toLocaleDateString('pt-BR') || new Date().toLocaleDateString('pt-BR'),
             formaPagamento: 'À vista'
           },
-          produtos: (order.produtos || []).map((produto: any) => ({
-            descricao: produto.descricao || 'Produto',
-            quantidade: produto.quantidade || 1,
-            valorUnitario: `R$ ${(produto.valor_unitario || 0).toFixed(2).replace('.', ',')}`
-          })),
+          produtos: (order.produtos || []).map((produto: any) => {
+            const valorUnitario = produto.valor_unitario || 0;
+            const quantidade = produto.quantidade || 1;
+            const total = valorUnitario * quantidade;
+            
+            return {
+              descricao: produto.descricao || 'Produto',
+              codigo: '001', // Valor padrão
+              quantidade: quantidade,
+              unitario: valorUnitario,
+              desconto: 0, // Valor padrão
+              total: total
+            };
+          }),
           veiculo: {
             marca: order.veiculo?.marca || '',
             modelo: order.veiculo?.modelo || '',
@@ -99,9 +98,10 @@ export default function Orders() {
             cor: order.veiculo?.cor || ''
           },
           responsaveis: {
-            instalador: order.instalador?.nome || '',
-            vendedor: order.vendedor?.nome || ''
-          }
+            instalador: order.instalador?.nome || 'Não definido',
+            vendedor: order.vendedor?.nome || 'Não definido'
+          },
+          observacoes: order.observacoes || ''
         };
 
         console.log('📋 Dados preparados para PDF:', orderData);
@@ -145,19 +145,21 @@ export default function Orders() {
         
         // Cleanup
         setTimeout(() => URL.revokeObjectURL(url), 5000);
-      }
       
       toast({
-        title: "Impressão iniciada",
-        description: `Pedido ${order.id} sendo preparado para impressão.`
+        title: "PDF enviado para impressão",
+        description: "O pedido foi enviado para a impressora."
       });
+      
     } catch (error) {
-      console.error('💥 Erro ao imprimir pedido:', error);
+      console.error('❌ Erro ao imprimir pedido:', error);
       toast({
-        title: "Erro ao imprimir",
-        description: "Tente novamente ou baixe o PDF manualmente.",
+        title: "Erro na impressão",
+        description: `Não foi possível imprimir o pedido: ${error.message}`,
         variant: "destructive"
       });
+    } finally {
+      setLocalLoading(false);
     }
   };
   const handleDeleteOrder = async (orderId: string) => {
