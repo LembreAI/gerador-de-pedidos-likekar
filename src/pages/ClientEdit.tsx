@@ -342,39 +342,6 @@ const ClientEdit = () => {
               </div>
             </div>
 
-            <Separator />
-
-            <div className="space-y-4">
-              <h4 className="font-medium">Informações Adicionais</h4>
-              
-              <div className="space-y-2">
-                <Label htmlFor="chassi">Chassi</Label>
-                <Input
-                  id="chassi"
-                  placeholder="Número do chassi"
-                  value={vehicleData.chassi}
-                  onChange={(e) => setVehicleData({ ...vehicleData, chassi: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="combustivel">Combustível</Label>
-                <Input
-                  id="combustivel"
-                  placeholder="Gasolina, Etanol, Flex"
-                  value={vehicleData.combustivel}
-                  onChange={(e) => setVehicleData({ ...vehicleData, combustivel: e.target.value })}
-                />
-              </div>
-            </div>
-
-            {vehicleId && (
-              <div className="flex items-center gap-2 mt-4">
-                <Badge variant="secondary" className="text-xs">
-                  Veículo cadastrado
-                </Badge>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
