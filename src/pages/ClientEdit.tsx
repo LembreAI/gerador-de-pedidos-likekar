@@ -246,53 +246,17 @@ const ClientEdit = () => {
 
             <Separator />
 
-            <div className="space-y-4">
-              <h4 className="font-medium flex items-center gap-2">
+            <div className="space-y-2">
+              <Label htmlFor="endereco" className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
-                Endereço
-              </h4>
-              
-              <div className="space-y-2">
-                <Label htmlFor="endereco">Logradouro</Label>
-                <Input
-                  id="endereco"
-                  placeholder="Rua, Avenida, etc."
-                  value={clientData.endereco}
-                  onChange={(e) => setClientData({ ...clientData, endereco: e.target.value })}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cidade">Cidade</Label>
-                  <Input
-                    id="cidade"
-                    placeholder="Cidade"
-                    value={clientData.cidade}
-                    onChange={(e) => setClientData({ ...clientData, cidade: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="estado">Estado</Label>
-                  <Input
-                    id="estado"
-                    placeholder="UF"
-                    value={clientData.estado}
-                    onChange={(e) => setClientData({ ...clientData, estado: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="cep">CEP</Label>
-                  <Input
-                    id="cep"
-                    placeholder="00000-000"
-                    value={clientData.cep}
-                    onChange={(e) => setClientData({ ...clientData, cep: e.target.value })}
-                  />
-                </div>
-              </div>
+                Endereço Completo
+              </Label>
+              <Input
+                id="endereco"
+                placeholder="Digite o endereço completo"
+                value={clientData.endereco}
+                onChange={(e) => setClientData({ ...clientData, endereco: e.target.value })}
+              />
             </div>
 
             <Separator />
