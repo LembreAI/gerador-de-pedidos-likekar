@@ -69,12 +69,15 @@ const ClientEdit = () => {
         cpf_cnpj: client.cpf_cnpj || ''
       });
 
-      // Buscar dados do veículo
-      const { data: vehicle, error: vehicleError } = await supabase
+      // Buscar dados do veículo (sempre pegar o primeiro se existir)
+      const { data: vehicles, error: vehicleError } = await supabase
         .from('veiculos')
         .select('*')
         .eq('cliente_id', id)
-        .maybeSingle();
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      const vehicle = vehicles && vehicles.length > 0 ? vehicles[0] : null;
 
       if (vehicle) {
         setVehicleId(vehicle.id);
@@ -113,29 +116,47 @@ const ClientEdit = () => {
 
       if (clientError) throw clientError;
 
-      // Atualizar ou criar veículo
-      if (vehicleId) {
-        // Atualizar veículo existente
-        const { error: vehicleError } = await supabase
-          .from('veiculos')
-          .update({
-            ...vehicleData,
-            ano: vehicleData.ano ? parseInt(vehicleData.ano) : null
-          })
-          .eq('id', vehicleId);
+      // Atualizar ou criar veículo usando upsert para evitar duplicatas
+      if (vehicleData.marca || vehicleData.modelo) {
+        const vehiclePayload = {
+          ...vehicleData,
+          ano: vehicleData.ano ? parseInt(vehicleData.ano) : null,
+          cliente_id: id
+        };
 
-        if (vehicleError) throw vehicleError;
-      } else if (vehicleData.marca || vehicleData.modelo) {
-        // Criar novo veículo se algum campo foi preenchido
-        const { error: vehicleError } = await supabase
-          .from('veiculos')
-          .insert({
-            ...vehicleData,
-            ano: vehicleData.ano ? parseInt(vehicleData.ano) : null,
-            cliente_id: id
-          });
+        if (vehicleId) {
+          // Atualizar veículo existente
+          const { error: vehicleError } = await supabase
+            .from('veiculos')
+            .update(vehiclePayload)
+            .eq('id', vehicleId);
 
-        if (vehicleError) throw vehicleError;
+          if (vehicleError) throw vehicleError;
+        } else {
+          // Verificar se já existe um veículo para este cliente antes de criar
+          const { data: existingVehicle } = await supabase
+            .from('veiculos')
+            .select('id')
+            .eq('cliente_id', id)
+            .limit(1);
+
+          if (existingVehicle && existingVehicle.length > 0) {
+            // Se já existe, atualizar o existente
+            const { error: vehicleError } = await supabase
+              .from('veiculos')
+              .update(vehiclePayload)
+              .eq('id', existingVehicle[0].id);
+
+            if (vehicleError) throw vehicleError;
+          } else {
+            // Criar novo veículo apenas se não existir nenhum
+            const { error: vehicleError } = await supabase
+              .from('veiculos')
+              .insert(vehiclePayload);
+
+            if (vehicleError) throw vehicleError;
+          }
+        }
       }
 
       toast({
