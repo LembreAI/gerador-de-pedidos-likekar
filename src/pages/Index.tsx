@@ -165,25 +165,57 @@ const Index = () => {
         clienteId = newCliente.id;
       }
 
-      // Salvar o veículo
-      const veiculoData = {
-        marca: orderData.veiculo.marca,
-        modelo: orderData.veiculo.modelo,
-        ano: parseInt(orderData.veiculo.ano),
-        placa: orderData.veiculo.placa || '',
-        cor: orderData.veiculo.cor || '',
-        chassi: '',
-        combustivel: '',
-        cliente_id: clienteId
-      };
-
-      const { data: veiculo, error: veiculoError } = await supabase
+      // Buscar ou criar o veículo (verificar se já existe para este cliente)
+      const { data: existingVeiculo } = await supabase
         .from('veiculos')
-        .insert(veiculoData)
         .select('id')
-        .single();
+        .eq('cliente_id', clienteId)
+        .maybeSingle();
 
-      if (veiculoError) throw veiculoError;
+      let veiculo;
+      if (existingVeiculo) {
+        // Atualizar veículo existente
+        const veiculoData = {
+          marca: orderData.veiculo.marca,
+          modelo: orderData.veiculo.modelo,
+          ano: parseInt(orderData.veiculo.ano),
+          placa: orderData.veiculo.placa || '',
+          cor: orderData.veiculo.cor || '',
+          chassi: '',
+          combustivel: ''
+        };
+
+        const { data: updatedVeiculo, error: veiculoError } = await supabase
+          .from('veiculos')
+          .update(veiculoData)
+          .eq('id', existingVeiculo.id)
+          .select('id')
+          .single();
+
+        if (veiculoError) throw veiculoError;
+        veiculo = updatedVeiculo;
+      } else {
+        // Criar novo veículo
+        const veiculoData = {
+          marca: orderData.veiculo.marca,
+          modelo: orderData.veiculo.modelo,
+          ano: parseInt(orderData.veiculo.ano),
+          placa: orderData.veiculo.placa || '',
+          cor: orderData.veiculo.cor || '',
+          chassi: '',
+          combustivel: '',
+          cliente_id: clienteId
+        };
+
+        const { data: newVeiculo, error: veiculoError } = await supabase
+          .from('veiculos')
+          .insert(veiculoData)
+          .select('id')
+          .single();
+
+        if (veiculoError) throw veiculoError;
+        veiculo = newVeiculo;
+      }
 
       // Buscar IDs dos vendedor e instalador
       let vendedorId = null;
