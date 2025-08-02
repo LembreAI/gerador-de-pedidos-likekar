@@ -242,11 +242,24 @@ const Index = () => {
         instaladorId = instalador?.id;
       }
 
-      // Calcular valor total
+      // Calcular valor total baseado nos campos corretos
       const valorTotal = orderData.produtos.reduce((total: number, produto: any) => {
-        const valor = parseFloat(produto.valorUnitario?.replace(/[^\d,]/g, '').replace(',', '.') || '0');
-        return total + (valor * (produto.quantidade || 1));
+        // Usar o campo 'total' ou 'unitario' do produto extraído
+        let valorProduto = 0;
+        if (produto.total) {
+          valorProduto = parseFloat(produto.total) || 0;
+        } else if (produto.unitario) {
+          valorProduto = parseFloat(produto.unitario) * (produto.quantidade || 1);
+        } else if (produto.valorUnitario) {
+          const valor = parseFloat(produto.valorUnitario?.replace(/[^\d,]/g, '').replace(',', '.') || '0');
+          valorProduto = valor * (produto.quantidade || 1);
+        }
+        
+        console.log(`💰 Produto: ${produto.descricao} - Valor: ${valorProduto}`);
+        return total + valorProduto;
       }, 0);
+      
+      console.log(`💰 Valor total calculado: R$ ${valorTotal.toFixed(2)}`);
 
       // Gerar número único para o pedido se necessário
       let numeroFinal = orderData.pedido.numero;
@@ -305,20 +318,34 @@ const Index = () => {
       
       if (orderData.produtos && orderData.produtos.length > 0) {
         const produtosData = orderData.produtos.map((produto: any) => {
-          // Tratar o campo valorUnitario que pode vir como string formatada
+          // Tratar os diferentes campos de valor que podem vir do PDF
           let valorUnitario = 0;
-          if (produto.valorUnitario) {
+          
+          // Verificar se tem o campo 'unitario' (do PDF extraído)
+          if (produto.unitario !== undefined) {
+            valorUnitario = parseFloat(produto.unitario) || 0;
+          }
+          // Verificar se tem o campo 'valorUnitario' (da entrada manual)
+          else if (produto.valorUnitario) {
             if (typeof produto.valorUnitario === 'string') {
               valorUnitario = parseFloat(produto.valorUnitario.replace(/[^\d,]/g, '').replace(',', '.') || '0');
             } else {
               valorUnitario = parseFloat(produto.valorUnitario) || 0;
             }
           }
+          // Verificar se tem o campo 'total' e 'quantidade' para calcular unitário
+          else if (produto.total && produto.quantidade) {
+            valorUnitario = parseFloat(produto.total) / (produto.quantidade || 1);
+          }
           
           const quantidade = produto.quantidade || 1;
           const valorTotal = valorUnitario * quantidade;
           
-          console.log(`📦 Produto: ${produto.descricao}, Qtd: ${quantidade}, Unit: ${valorUnitario}, Total: ${valorTotal}`);
+          console.log(`📦 Produto: ${produto.descricao}`);
+          console.log(`   - Qtd: ${quantidade}`);
+          console.log(`   - Unit original: ${produto.unitario || produto.valorUnitario || 'N/A'}`);
+          console.log(`   - Unit calculado: ${valorUnitario}`);
+          console.log(`   - Total: ${valorTotal}`);
           
           return {
             pedido_id: pedido.id,
