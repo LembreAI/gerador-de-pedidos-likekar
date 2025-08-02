@@ -12,6 +12,7 @@ export interface Installador {
   cidade?: string;
   estado?: string;
   ativo: boolean;
+  comissao?: number;
   created_at: string;
   updated_at: string;
 }
