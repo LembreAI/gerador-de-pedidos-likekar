@@ -57,7 +57,10 @@ export default function Orders() {
   );
   const handlePrintOrder = async (order: any) => {
     try {
+      console.log('🖨️ Iniciando impressão do pedido:', order);
+      
       if (order.pdfBlob) {
+        console.log('📄 Usando PDF salvo');
         // Use the saved PDF blob
         const url = URL.createObjectURL(order.pdfBlob);
         const printWindow = window.open(url, '_blank');
@@ -68,39 +71,87 @@ export default function Orders() {
         }
         URL.revokeObjectURL(url);
       } else {
-        // Regenerate PDF from saved data
+        console.log('🔄 Regenerando PDF a partir dos dados');
+        // Preparar dados do pedido para impressão
         const orderData = {
-          cliente: order.extractedData?.cliente || {},
-          pedido: order.extractedData?.pedido || { numero: order.id },
+          cliente: {
+            nome: order.cliente?.nome || order.responsavel_nome || 'Cliente não identificado',
+            telefone: order.cliente?.telefone || order.responsavel_telefone || '',
+            email: order.cliente?.email || '',
+            endereco: order.cliente?.endereco || '',
+            cpf_cnpj: order.cliente?.cpf_cnpj || ''
+          },
+          pedido: {
+            numero: order.id || 'N/A',
+            data: new Date(order.created_at).toLocaleDateString('pt-BR') || new Date().toLocaleDateString('pt-BR'),
+            formaPagamento: 'À vista' // Campo obrigatório para o PDF
+          },
           produtos: order.produtos || [],
-          veiculo: order.veiculo || {},
+          veiculo: {
+            marca: order.veiculo?.marca || '',
+            modelo: order.veiculo?.modelo || '',
+            ano: order.veiculo?.ano || '',
+            placa: order.veiculo?.placa || '',
+            cor: order.veiculo?.cor || ''
+          },
           responsaveis: {
             instalador: order.instalador?.nome || '',
             vendedor: order.vendedor?.nome || ''
           }
         };
+
+        console.log('📋 Dados preparados para PDF:', orderData);
+        
         const pdfBytes = await generateLikeKarPDF(orderData);
         const blob = new Blob([pdfBytes], {
           type: 'application/pdf'
         });
         const url = URL.createObjectURL(blob);
-        const printWindow = window.open(url, '_blank');
+        
+        // Tentar abrir em nova aba para impressão
+        const printWindow = window.open('', '_blank');
         if (printWindow) {
-          printWindow.addEventListener('load', () => {
-            printWindow.print();
-          });
+          printWindow.document.write(`
+            <html>
+              <head>
+                <title>Impressão - Pedido ${order.id}</title>
+              </head>
+              <body style="margin:0;">
+                <iframe src="${url}" width="100%" height="100%" frameborder="0"></iframe>
+                <script>
+                  window.addEventListener('load', function() {
+                    setTimeout(function() {
+                      window.print();
+                    }, 1000);
+                  });
+                </script>
+              </body>
+            </html>
+          `);
+          printWindow.document.close();
+        } else {
+          // Fallback: download se não conseguir imprimir
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `Pedido_LikeKar_${order.id}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
         }
-        URL.revokeObjectURL(url);
+        
+        // Cleanup
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
       }
+      
       toast({
-        title: "Imprimindo pedido",
-        description: `Pedido ${order.id} enviado para impressão.`
+        title: "Impressão iniciada",
+        description: `Pedido ${order.id} sendo preparado para impressão.`
       });
     } catch (error) {
-      console.error('Erro ao imprimir pedido:', error);
+      console.error('💥 Erro ao imprimir pedido:', error);
       toast({
         title: "Erro ao imprimir",
-        description: "Ocorreu um erro ao preparar o pedido para impressão.",
+        description: "Tente novamente ou baixe o PDF manualmente.",
         variant: "destructive"
       });
     }
