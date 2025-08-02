@@ -6,12 +6,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Search, MoreVertical, Edit, Eye, Filter } from "lucide-react";
 import { useInstaladores } from "@/contexts/InstalladoresContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { InstaladorForm } from "@/components/forms/InstaladorForm";
 import { useState } from "react";
 
 export default function Installers() {
   const { instaladores, loading } = useInstaladores();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
+  const [showForm, setShowForm] = useState(false);
 
   const filteredInstaladores = instaladores.filter(instalador =>
     instalador.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -45,7 +47,7 @@ export default function Installers() {
             Gerencie sua equipe de instalação
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setShowForm(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Adicionar Instalador
         </Button>
@@ -173,6 +175,8 @@ export default function Installers() {
           </div>
         </div>
       </Card>
+      
+      <InstaladorForm open={showForm} onOpenChange={setShowForm} />
     </div>
   );
 }

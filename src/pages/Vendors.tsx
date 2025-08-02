@@ -14,12 +14,14 @@ import {
 import { Plus, Search, MoreVertical, Edit, Eye, Filter, Loader2 } from "lucide-react";
 import { useVendedores } from "@/contexts/VendedoresContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { VendedorForm } from "@/components/forms/VendedorForm";
 import { useState } from "react";
 
 export default function Vendors() {
   const { vendedores, loading } = useVendedores();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
+  const [showForm, setShowForm] = useState(false);
 
   const filteredVendedores = vendedores.filter(vendedor =>
     vendedor.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -51,7 +53,7 @@ export default function Vendors() {
             Gerencie sua equipe de vendas
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setShowForm(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Adicionar Vendedor
         </Button>
@@ -180,6 +182,8 @@ export default function Vendors() {
           </div>
         </div>
       </Card>
+      
+      <VendedorForm open={showForm} onOpenChange={setShowForm} />
     </div>
   );
 }
