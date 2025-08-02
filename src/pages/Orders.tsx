@@ -212,14 +212,21 @@ export default function Orders() {
         return;
       }
 
-      // Fazer fetch primeiro para verificar se o arquivo existe
-      const response = await fetch(order.pdf_gerado_url);
+      // Para URLs assinadas, usar fetch com headers apropriados
+      console.log('📥 Fazendo download do PDF...');
+      const response = await fetch(order.pdf_gerado_url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/pdf'
+        }
+      });
+      
       if (!response.ok) {
         throw new Error(`Erro ${response.status}: ${response.statusText}`);
       }
 
       const blob = await response.blob();
-      console.log('✅ PDF baixado, tamanho:', blob.size);
+      console.log('✅ PDF baixado, tamanho:', blob.size, 'bytes');
 
       // Criar URL para download
       const url = URL.createObjectURL(blob);
@@ -228,12 +235,13 @@ export default function Orders() {
       const link = document.createElement('a');
       link.href = url;
       link.download = `Pedido_${order.id}.pdf`;
+      link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
-      // Limpar URL
-      URL.revokeObjectURL(url);
+      // Limpar URL após um breve delay
+      setTimeout(() => URL.revokeObjectURL(url), 100);
 
       toast({
         title: "Download iniciado",

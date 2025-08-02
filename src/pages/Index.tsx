@@ -324,17 +324,22 @@ const Index = () => {
       }
       console.log('✅ Upload realizado:', uploadData.path);
 
-      // Obter URL pública do PDF
-      const { data: urlData } = supabase.storage
+      // Para bucket privado, usar URL assinada (válida por 1 ano)
+      const { data: urlData, error: urlError } = await supabase.storage
         .from('pdfs')
-        .getPublicUrl(fileName);
+        .createSignedUrl(fileName, 60 * 60 * 24 * 365); // 1 ano
       
-      console.log('🔗 URL do PDF:', urlData.publicUrl);
+      if (urlError) {
+        console.error('❌ Erro ao gerar URL assinada:', urlError);
+        throw new Error(`Erro ao gerar URL: ${urlError.message}`);
+      }
+      
+      console.log('🔗 URL assinada do PDF:', urlData.signedUrl);
 
       // Atualizar pedido com a URL do PDF gerado
       const { error: updateError } = await supabase
         .from('pedidos')
-        .update({ pdf_gerado_url: urlData.publicUrl })
+        .update({ pdf_gerado_url: urlData.signedUrl })
         .eq('id', pedido.id);
 
       if (updateError) {
@@ -342,7 +347,7 @@ const Index = () => {
         throw updateError;
       }
 
-      console.log('✅ PDF salvo com sucesso:', urlData.publicUrl);
+      console.log('✅ PDF salvo com sucesso:', urlData.signedUrl);
 
       // Salvar os produtos do pedido
       console.log('📦 Produtos a serem salvos:', orderData.produtos);
