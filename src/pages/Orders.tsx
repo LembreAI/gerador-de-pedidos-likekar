@@ -34,14 +34,22 @@ export default function Orders() {
   } = useToast();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+  const [localLoading, setLocalLoading] = useState(loading);
 
-  // Recarregar pedidos quando a página carregar
+  // Sincronizar estado de loading local
+  useEffect(() => {
+    setLocalLoading(loading);
+  }, [loading]);
+
+  // Recarregar pedidos quando a página carregar - apenas uma vez
   useEffect(() => {
     console.log('🔄 Orders.tsx: Página de pedidos carregada, forçando reload...');
-    reloadOrders();
-  }, [reloadOrders]);
+    if (orders.length === 0) {
+      reloadOrders();
+    }
+  }, []); // Array vazio para executar apenas uma vez
 
-  console.log('📊 Orders.tsx: Estado atual dos pedidos:', { orders, loading, ordersLength: orders.length });
+  console.log('📊 Orders.tsx: Estado atual dos pedidos:', { orders, loading, localLoading, ordersLength: orders.length });
   const filteredOrders = orders.filter(order => 
     order.cliente?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     order.id?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -149,7 +157,7 @@ export default function Orders() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading ? (
+                {localLoading && orders.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       Carregando pedidos...
