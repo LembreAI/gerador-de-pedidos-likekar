@@ -125,49 +125,55 @@ export default function ClientDetails() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="container mx-auto px-4 py-4 sm:py-8 max-w-6xl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+        <div className="flex items-start gap-4">
           <Button 
             variant="ghost" 
             size="sm"
             onClick={() => navigate('/pedidos')}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 mt-1"
           >
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold">{client.nome}</h1>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl sm:text-3xl font-bold break-words">{client.nome}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <p className="text-lg text-muted-foreground">{client.telefone}</p>
+              <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <p className="text-base sm:text-lg text-muted-foreground">{client.telefone}</p>
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => navigate(`/cliente/${id}/editar`)} className="bg-amber-500 hover:bg-amber-600">
+        <div className="flex gap-2 flex-shrink-0">
+          <Button 
+            onClick={() => navigate(`/cliente/${id}/editar`)} 
+            className="bg-amber-500 hover:bg-amber-600 flex-1 sm:flex-none"
+          >
             <Edit className="h-4 w-4 mr-2" />
             Editar
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive">
+              <Button variant="destructive" className="flex-1 sm:flex-none">
                 <Trash2 className="h-4 w-4 mr-2" />
                 Excluir
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="mx-4 max-w-sm sm:max-w-lg">
               <AlertDialogHeader>
                 <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
                 <AlertDialogDescription>
                   Tem certeza que deseja excluir o cliente {client.nome}? Esta ação não pode ser desfeita e todos os dados relacionados serão removidos.
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteClient} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={handleDeleteClient} 
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto"
+                >
                   Excluir
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -176,29 +182,31 @@ export default function ClientDetails() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Dados Pessoais */}
         <div className="lg:col-span-2">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <User className="h-5 w-5 flex-shrink-0" />
                 Dados Pessoais
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 Informações básicas do cliente
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <CardContent className="space-y-4 sm:space-y-6">
+              <div className="grid grid-cols-1 gap-4 sm:gap-6">
                 {/* CPF/CNPJ */}
                 {client.cpf_cnpj && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-primary" />
-                      <Label className="font-medium">CPF/CNPJ</Label>
+                      <CreditCard className="h-4 w-4 text-primary flex-shrink-0" />
+                      <Label className="font-medium text-sm sm:text-base">CPF/CNPJ</Label>
                     </div>
-                    <p className="text-lg font-mono bg-muted p-3 rounded-md">{client.cpf_cnpj}</p>
+                    <p className="text-base sm:text-lg font-mono bg-muted p-3 rounded-md break-all">
+                      {client.cpf_cnpj}
+                    </p>
                   </div>
                 )}
 
@@ -206,10 +214,12 @@ export default function ClientDetails() {
                 {client.email && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-primary" />
-                      <Label className="font-medium">E-mail</Label>
+                      <Mail className="h-4 w-4 text-primary flex-shrink-0" />
+                      <Label className="font-medium text-sm sm:text-base">E-mail</Label>
                     </div>
-                    <p className="text-lg bg-muted p-3 rounded-md">{client.email}</p>
+                    <p className="text-base sm:text-lg bg-muted p-3 rounded-md break-all">
+                      {client.email}
+                    </p>
                   </div>
                 )}
               </div>
@@ -218,11 +228,13 @@ export default function ClientDetails() {
               {client.endereco && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-primary" />
-                    <Label className="font-medium">Endereço</Label>
+                    <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+                    <Label className="font-medium text-sm sm:text-base">Endereço</Label>
                   </div>
-                  <div className="bg-muted p-4 rounded-md">
-                    <p className="text-lg leading-relaxed">{client.endereco}</p>
+                  <div className="bg-muted p-3 sm:p-4 rounded-md">
+                    <p className="text-base sm:text-lg leading-relaxed break-words">
+                      {client.endereco}
+                    </p>
                   </div>
                 </div>
               )}
@@ -231,15 +243,15 @@ export default function ClientDetails() {
         </div>
 
         {/* Veículos */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {vehicles.length > 0 ? (
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Car className="h-5 w-5" />
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                  <Car className="h-5 w-5 flex-shrink-0" />
                   Veículos
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-sm">
                   Veículos cadastrados para este cliente
                 </CardDescription>
               </CardHeader>
@@ -250,12 +262,12 @@ export default function ClientDetails() {
                     
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs break-words">
                           {vehicle.marca} {vehicle.modelo}
                         </Badge>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                         <div>
                           <span className="font-medium text-muted-foreground">Ano:</span>
                           <p className="font-medium">{vehicle.ano}</p>
@@ -263,16 +275,16 @@ export default function ClientDetails() {
                         {vehicle.placa && (
                           <div>
                             <span className="font-medium text-muted-foreground">Placa:</span>
-                            <p className="font-mono font-medium">{vehicle.placa}</p>
+                            <p className="font-mono font-medium break-all">{vehicle.placa}</p>
                           </div>
                         )}
                         {vehicle.cor && (
-                          <div className="col-span-2">
+                          <div className="col-span-1 sm:col-span-2">
                             <div className="flex items-center gap-2">
-                              <Palette className="h-3 w-3 text-muted-foreground" />
+                              <Palette className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                               <span className="font-medium text-muted-foreground">Cor:</span>
                             </div>
-                            <p className="font-medium">{vehicle.cor}</p>
+                            <p className="font-medium break-words">{vehicle.cor}</p>
                           </div>
                         )}
                       </div>
@@ -283,20 +295,22 @@ export default function ClientDetails() {
             </Card>
           ) : (
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Car className="h-5 w-5" />
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                  <Car className="h-5 w-5 flex-shrink-0" />
                   Veículos
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-6">
-                  <Car className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">Nenhum veículo cadastrado</p>
+                <div className="text-center py-4 sm:py-6">
+                  <Car className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-3 sm:mb-4" />
+                  <p className="text-muted-foreground text-sm sm:text-base mb-3">
+                    Nenhum veículo cadastrado
+                  </p>
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="mt-3"
+                    className="w-full sm:w-auto"
                     onClick={() => navigate(`/cliente/${id}/editar`)}
                   >
                     Cadastrar Veículo
