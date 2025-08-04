@@ -14,6 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  DollarSign,
+  Package,
 } from "lucide-react";
 
 const menuItems = [
@@ -46,6 +48,18 @@ const menuItems = [
     label: "Instaladores",
     icon: Wrench,
     path: "/instaladores",
+  },
+  {
+    id: "comissoes",
+    label: "Comissões",
+    icon: DollarSign,
+    path: "/comissoes",
+  },
+  {
+    id: "comissoes-produtos",
+    label: "Comissões por Produto",
+    icon: Package,
+    path: "/comissoes-produtos",
   },
   {
     id: "configuracoes",
