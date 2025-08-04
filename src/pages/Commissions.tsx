@@ -98,15 +98,22 @@ export default function Commissions() {
           {/* Seletor de Período */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className={cn("w-[240px] justify-start text-left font-normal", !selectedPeriod && "text-muted-foreground")}>
+              <Button variant="outline" className={cn("w-full sm:w-[240px] justify-start text-left font-normal", !selectedPeriod && "text-muted-foreground")}>
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {selectedPeriod ? format(selectedPeriod, "MMMM 'de' yyyy", {
                 locale: ptBR
               }) : <span>Selecione o período</span>}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar mode="single" selected={selectedPeriod} onSelect={date => date && setSelectedPeriod(date)} initialFocus className="p-3 pointer-events-auto" />
+            <PopoverContent className="w-auto p-0" align="start" side="bottom">
+              <Calendar 
+                mode="single" 
+                selected={selectedPeriod} 
+                onSelect={date => date && setSelectedPeriod(date)} 
+                initialFocus 
+                locale={ptBR}
+                className="p-3 pointer-events-auto" 
+              />
             </PopoverContent>
           </Popover>
         </div>
