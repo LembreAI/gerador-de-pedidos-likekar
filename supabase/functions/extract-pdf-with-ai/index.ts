@@ -60,15 +60,16 @@ serve(async (req) => {
                 "formaPagamento": "",
                 "valorTotal": 0
               },
-              "produtos": [
-                {
-                  "codigo": "",
-                  "descricao": "",
-                  "quantidade": 0,
-                  "valor": 0,
-                  "total": 0
-                }
-              ],
+               "produtos": [
+                 {
+                   "codigo": "",
+                   "descricao": "",
+                   "quantidade": 0,
+                   "unitario": 0,
+                   "desconto": 0,
+                   "total": 0
+                 }
+               ],
               "veiculo": {
                 "modelo": "",
                 "ano": "",

@@ -230,13 +230,19 @@ export class LikeKarPDFGenerator {
     data.produtos.forEach((produto) => {
       xPosition = 50; // Centralizado
       
+      // Garantir compatibilidade com estruturas antigas e novas
+      const valorUnitario = produto.unitario || (produto as any).valor || 0;
+      const desconto = produto.desconto || 0;
+      const total = produto.total || 0;
+      const quantidade = produto.quantidade || 0;
+      
       const rowData = [
-        produto.descricao,
-        produto.codigo,
-        produto.quantidade.toString(),
-        `R$ ${produto.unitario.toFixed(2).replace('.', ',')}`,
-        `${produto.desconto}%`,
-        `R$ ${produto.total.toFixed(2).replace('.', ',')}`,
+        produto.descricao || '',
+        produto.codigo || '',
+        quantidade.toString(),
+        `R$ ${typeof valorUnitario === 'number' ? valorUnitario.toFixed(2).replace('.', ',') : '0,00'}`,
+        `${typeof desconto === 'number' ? desconto.toFixed(2) : '0,00'}%`,
+        `R$ ${typeof total === 'number' ? total.toFixed(2).replace('.', ',') : '0,00'}`,
       ];
 
       // Desenhar células da linha com bordas
