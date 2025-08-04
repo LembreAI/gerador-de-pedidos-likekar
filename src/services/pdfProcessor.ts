@@ -41,9 +41,67 @@ export interface ExtractedData {
   };
 }
 
-export async function extractDataFromPDF(file: File, debugMode = false): Promise<ExtractedData> {
+export async function extractDataFromPDF(file: File, useAI = true): Promise<ExtractedData> {
+  console.log('🚀 Iniciando extração de PDF:', file.name, useAI ? '(com IA)' : '(regex)');
+  
+  if (useAI) {
+    return await extractWithAI(file);
+  }
+  
+  // Fallback para extração com regex (método antigo)
+  return await extractWithRegex(file);
+}
+
+async function extractWithAI(file: File): Promise<ExtractedData> {
   try {
-    console.log('🚀 Iniciando processamento do PDF:', file.name, 'Tamanho:', file.size);
+    console.log('🤖 Convertendo PDF para base64...');
+    
+    // Converter arquivo para base64
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    let binary = '';
+    const chunkSize = 0x8000;
+    
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length));
+      binary += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    
+    const base64 = btoa(binary);
+    console.log('📁 PDF convertido para base64, tamanho:', base64.length);
+
+    // Chamada para edge function
+    const response = await fetch('/functions/v1/extract-pdf-with-ai', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        pdfBase64: base64
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('❌ Erro na API:', errorData);
+      throw new Error(errorData.error || 'Falha na extração via IA');
+    }
+
+    const { extractedData } = await response.json();
+    console.log('✅ Dados extraídos via IA:', extractedData);
+
+    return extractedData;
+
+  } catch (error) {
+    console.error('❌ Erro na extração via IA:', error);
+    console.log('🔄 Tentando fallback com regex...');
+    return await extractWithRegex(file);
+  }
+}
+
+async function extractWithRegex(file: File): Promise<ExtractedData> {
+  try {
+    console.log('🚀 Iniciando processamento regex do PDF:', file.name, 'Tamanho:', file.size);
     
     // Configure PDF.js worker
     pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -75,15 +133,7 @@ export async function extractDataFromPDF(file: File, debugMode = false): Promise
     }
     
     console.log('📝 Texto extraído, comprimento:', fullText.length);
-    
-    if (debugMode) {
-      console.log('🔍 MODO DEBUG - Texto completo extraído:');
-      console.log('=' .repeat(80));
-      console.log(fullText);
-      console.log('=' .repeat(80));
-    } else {
-      console.log('📋 Primeiro trecho do texto:', fullText.substring(0, 300));
-    }
+    console.log('📋 Primeiro trecho do texto:', fullText.substring(0, 300));
 
     // Extrair dados reais usando padrões melhorados
     const extractedData: ExtractedData = {
@@ -92,12 +142,7 @@ export async function extractDataFromPDF(file: File, debugMode = false): Promise
       produtos: extractProducts(fullText),
       veiculo: extractVehicleData(fullText),
       equipe: extractTeamData(fullText),
-      observacoes: extractObservations(fullText),
-      debugInfo: debugMode ? {
-        fullText,
-        pagesProcessed: pdf.numPages,
-        textLength: fullText.length
-      } : undefined
+      observacoes: extractObservations(fullText)
     };
 
     // Validar dados extraídos

@@ -40,8 +40,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
       console.log('🚀 Iniciando extração real do PDF:', file.name);
       
-      // Usar extração real de PDF
-      const extractedData = await extractDataFromPDF(file, false);
+      // Usar extração via IA
+      const extractedData = await extractDataFromPDF(file, true);
       
       setExtractedData(extractedData);
       onDataExtracted(extractedData);
