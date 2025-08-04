@@ -1,4 +1,5 @@
 import * as pdfjsLib from 'pdfjs-dist';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface ExtractedData {
   cliente: {
@@ -76,24 +77,19 @@ async function extractWithAI(file: File): Promise<ExtractedData> {
     
     console.log('📝 Texto extraído para IA, comprimento:', fullText.length);
 
-    // Chamada para edge function com texto
-    const response = await fetch('https://cdrlihhhsewmiiwbwewi.supabase.co/functions/v1/extract-pdf-with-ai', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        pdfBase64: fullText
-      }),
+    // Chamada para edge function usando cliente Supabase
+    const { data, error } = await supabase.functions.invoke('extract-pdf-with-ai', {
+      body: { 
+        pdfBase64: fullText 
+      }
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('❌ Erro na API:', errorData);
-      throw new Error(errorData.error || 'Falha na extração via IA');
+    if (error) {
+      console.error('❌ Erro na API:', error);
+      throw new Error(error.message || 'Falha na extração via IA');
     }
 
-    const { extractedData } = await response.json();
+    const extractedData = data;
     console.log('✅ Dados extraídos via IA:', extractedData);
 
     return extractedData;
