@@ -53,7 +53,14 @@ export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             pedido.veiculo_id ? supabase.from('veiculos').select('*').eq('id', pedido.veiculo_id).maybeSingle() : { data: null, error: null },
             pedido.vendedor_id ? supabase.from('vendedores').select('*').eq('id', pedido.vendedor_id).maybeSingle() : { data: null, error: null },
             pedido.instalador_id ? supabase.from('instaladores').select('*').eq('id', pedido.instalador_id).maybeSingle() : { data: null, error: null },
-            supabase.from('produtos_pedido').select('*').eq('pedido_id', pedido.id)
+            supabase.from('produtos_pedido').select(`
+              *,
+              instaladores(
+                id,
+                nome,
+                email
+              )
+            `).eq('pedido_id', pedido.id)
           ]);
 
           // Verificar se há erros nas consultas relacionadas
@@ -113,7 +120,14 @@ export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         pedido.veiculo_id ? supabase.from('veiculos').select('*').eq('id', pedido.veiculo_id).maybeSingle() : { data: null, error: null },
         pedido.vendedor_id ? supabase.from('vendedores').select('*').eq('id', pedido.vendedor_id).maybeSingle() : { data: null, error: null },
         pedido.instalador_id ? supabase.from('instaladores').select('*').eq('id', pedido.instalador_id).maybeSingle() : { data: null, error: null },
-        supabase.from('produtos_pedido').select('*').eq('pedido_id', pedido.id)
+        supabase.from('produtos_pedido').select(`
+          *,
+          instaladores(
+            id,
+            nome,
+            email
+          )
+        `).eq('pedido_id', pedido.id)
       ]);
 
       // Verificar se há erros nas consultas relacionadas

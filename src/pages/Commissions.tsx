@@ -171,7 +171,7 @@ export default function Commissions() {
                           {funcionario.comissao}% de comissão
                         </span>
                         <span className="text-xs sm:text-sm text-muted-foreground">
-                          {funcionario.total_trabalhos} {funcionario.tipo === 'Vendedor' ? 'venda' : 'instalação'}{funcionario.total_trabalhos !== 1 ? funcionario.tipo === 'Vendedor' ? 's' : 'ões' : ''}
+                          {funcionario.total_trabalhos} {funcionario.tipo === 'Vendedor' ? 'venda' : 'produto instalado'}{funcionario.total_trabalhos !== 1 ? funcionario.tipo === 'Vendedor' ? 's' : 's' : ''}
                         </span>
                       </div>
                     </div>
@@ -245,7 +245,7 @@ export default function Commissions() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm">
-                      {selectedFuncionario.tipo === 'Vendedor' ? 'Vendas' : 'Instalações'}
+                      {selectedFuncionario.tipo === 'Vendedor' ? 'Vendas' : 'Produtos Instalados'}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>

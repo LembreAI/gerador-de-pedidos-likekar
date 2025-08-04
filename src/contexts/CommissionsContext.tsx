@@ -117,39 +117,44 @@ export const CommissionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
       const vendedoresProcessed = Array.from(vendedoresMap.values());
 
-      // Buscar pedidos com instaladores no período
-      const { data: pedidosInstaladores, error: pedidosInstalladoresError } = await supabase
-        .from('pedidos')
+      // Buscar produtos com instaladores no período
+      const { data: produtosInstaladores, error: produtosInstalladoresError } = await supabase
+        .from('produtos_pedido')
         .select(`
           id,
           valor_total,
           instalador_id,
+          pedido_id,
           instaladores!inner(
             id,
             nome,
             email,
             comissao
+          ),
+          pedidos!inner(
+            created_at,
+            user_id
           )
         `)
-        .eq('user_id', user.id)
+        .eq('pedidos.user_id', user.id)
         .not('instalador_id', 'is', null)
-        .gte('created_at', startDate)
-        .lte('created_at', endDate);
+        .gte('pedidos.created_at', startDate)
+        .lte('pedidos.created_at', endDate);
 
-      if (pedidosInstalladoresError) throw pedidosInstalladoresError;
+      if (produtosInstalladoresError) throw produtosInstalladoresError;
 
       // Processar dados dos instaladores
       const installadoresMap = new Map<string, InstaladorComissao>();
       
-      pedidosInstaladores?.forEach((pedido: any) => {
-        const instaladorId = pedido.instalador_id;
-        const instalador = pedido.instaladores;
-        const valorPedido = pedido.valor_total || 0;
+      produtosInstaladores?.forEach((produto: any) => {
+        const instaladorId = produto.instalador_id;
+        const instalador = produto.instaladores;
+        const valorProduto = produto.valor_total || 0;
         
         if (installadoresMap.has(instaladorId)) {
           const existing = installadoresMap.get(instaladorId)!;
           existing.total_instalacoes++;
-          existing.valor_total_instalacoes += valorPedido;
+          existing.valor_total_instalacoes += valorProduto;
           existing.comissao_total = existing.valor_total_instalacoes * (existing.comissao / 100);
         } else {
           installadoresMap.set(instaladorId, {
@@ -158,8 +163,8 @@ export const CommissionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
             email: instalador.email,
             comissao: instalador.comissao,
             total_instalacoes: 1,
-            valor_total_instalacoes: valorPedido,
-            comissao_total: valorPedido * (instalador.comissao / 100)
+            valor_total_instalacoes: valorProduto,
+            comissao_total: valorProduto * (instalador.comissao / 100)
           });
         }
       });
@@ -230,12 +235,18 @@ export const CommissionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
           });
         } else {
           const { data } = await supabase
-            .from('pedidos')
-            .select('valor_total')
-            .eq('user_id', user.id)
+            .from('produtos_pedido')
+            .select(`
+              valor_total,
+              pedidos!inner(
+                created_at,
+                user_id
+              )
+            `)
+            .eq('pedidos.user_id', user.id)
             .eq('instalador_id', funcionarioId)
-            .gte('created_at', startDate)
-            .lte('created_at', endDate);
+            .gte('pedidos.created_at', startDate)
+            .lte('pedidos.created_at', endDate);
 
           const instalador = await supabase
             .from('instaladores')
@@ -243,7 +254,7 @@ export const CommissionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
             .eq('id', funcionarioId)
             .single();
 
-          const valorTotal = data?.reduce((sum, pedido) => sum + (pedido.valor_total || 0), 0) || 0;
+          const valorTotal = data?.reduce((sum, produto) => sum + (produto.valor_total || 0), 0) || 0;
           const comissao = valorTotal * ((instalador.data?.comissao || 0) / 100);
 
           monthsData.push({

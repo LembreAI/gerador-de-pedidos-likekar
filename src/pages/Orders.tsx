@@ -537,6 +537,7 @@ export default function Orders() {
                         <TableHead className="text-center">Qtd</TableHead>
                         <TableHead className="text-right">Valor Unit.</TableHead>
                         <TableHead className="text-right">Total</TableHead>
+                        <TableHead>Instalador</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -551,11 +552,20 @@ export default function Orders() {
                             <TableCell className="text-right">
                               R$ {(produto.valor_total || 0).toFixed(2).replace('.', ',')}
                             </TableCell>
+                            <TableCell>
+                              {produto.instaladores?.nome ? (
+                                <Badge variant="secondary" className="text-xs">
+                                  {produto.instaladores.nome}
+                                </Badge>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">Não atribuído</span>
+                              )}
+                            </TableCell>
                           </TableRow>
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground">
+                          <TableCell colSpan={5} className="text-center text-muted-foreground">
                             Nenhum produto encontrado
                           </TableCell>
                         </TableRow>
@@ -581,16 +591,31 @@ export default function Orders() {
               {/* Responsáveis */}
               <Card className="p-4">
                 <h3 className="font-semibold mb-3">Responsáveis</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Instalador</p>
-                    <p className="font-medium">{selectedOrder.instalador?.nome || 'Não definido'}</p>
-                  </div>
+                <div className="grid grid-cols-1 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Vendedor</p>
                     <p className="font-medium">{selectedOrder.vendedor?.nome || 'Não definido'}</p>
                   </div>
                 </div>
+                
+                {/* Instaladores por Produto */}
+                {selectedOrder.produtos && selectedOrder.produtos.some((p: any) => p.instaladores?.nome) && (
+                  <div className="mt-4 pt-4 border-t">
+                    <h4 className="font-medium mb-2 text-sm text-muted-foreground">Instaladores Atribuídos</h4>
+                    <div className="space-y-2">
+                      {selectedOrder.produtos
+                        .filter((produto: any) => produto.instaladores?.nome)
+                        .map((produto: any, index: number) => (
+                          <div key={index} className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">{produto.descricao}</span>
+                            <Badge variant="secondary" className="text-xs">
+                              {produto.instaladores.nome}
+                            </Badge>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
               </Card>
 
               {/* Observações */}
