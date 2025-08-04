@@ -104,11 +104,16 @@ async function extractWithAI(file: File): Promise<ExtractedData> {
       const numeroOriginal = extractedData.pedido.numero;
       console.log(`📝 Verificando se pedido ${numeroOriginal} já existe...`);
       
+      // Obter user ID
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      console.log(`👤 User ID:`, userData.user?.id);
+      console.log(`❌ Erro ao obter usuário:`, userError);
+      
       const { data: existingOrder, error: checkError } = await supabase
         .from('pedidos')
-        .select('id, responsavel_nome, created_at')
+        .select('id, responsavel_nome, created_at, user_id')
         .eq('id', numeroOriginal)
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .eq('user_id', userData.user?.id)
         .maybeSingle();
 
       console.log(`🔍 Resultado da verificação:`, existingOrder);
