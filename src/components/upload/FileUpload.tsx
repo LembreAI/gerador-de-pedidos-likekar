@@ -148,12 +148,18 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                 <h3 className="font-medium text-primary mb-2">Dados Extraídos:</h3>
                 <div className="space-y-1 text-sm">
                   <p><strong>Cliente:</strong> {extractedData?.cliente?.nome || 'Não encontrado'}</p>
-                  <p><strong>CPF/CNPJ:</strong> {extractedData?.cliente?.cpfCnpj || 'Não encontrado'}</p>
+                  <p><strong>CPF/CNPJ:</strong> {extractedData?.cliente?.cpfCnpj || 'Não informado'}</p>
                   <p><strong>Pedido:</strong> #{extractedData?.pedido?.numero || 'Não encontrado'}</p>
                   <p><strong>Data:</strong> {extractedData?.pedido?.data || 'Não encontrada'}</p>
+                  <p><strong>Vendedor:</strong> {extractedData?.pedido?.vendedor || extractedData?.equipe?.vendedor || 'Não informado'}</p>
+                  <p><strong>Forma de Pagamento:</strong> {extractedData?.pedido?.formaPagamento || 'Não informado'}</p>
                   <p><strong>Produtos:</strong> {extractedData?.produtos?.length || 0} itens</p>
-                  {extractedData?.produtos?.length > 0 && (
-                    <p><strong>Total dos produtos:</strong> R$ {extractedData.produtos.reduce((sum, p) => sum + p.total, 0).toFixed(2)}</p>
+                  <p><strong>Total do Pedido:</strong> R$ {extractedData?.pedido?.valorTotal ? extractedData.pedido.valorTotal.toFixed(2) : 'Não informado'}</p>
+                  {extractedData?.veiculo?.modelo && (
+                    <p><strong>Veículo:</strong> {extractedData.veiculo.modelo} {extractedData.veiculo.ano} - {extractedData.veiculo.placa}</p>
+                  )}
+                  {extractedData?.equipe?.instalador && (
+                    <p><strong>Instalador:</strong> {extractedData.equipe.instalador}</p>
                   )}
                 </div>
               </div>
