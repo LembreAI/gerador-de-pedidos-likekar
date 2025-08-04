@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { startOfMonth, endOfMonth, parseISO } from 'date-fns';
+import type { DateRange } from 'react-day-picker';
 
 export interface VendedorComissao {
   id: string;
@@ -35,8 +36,8 @@ interface CommissionsContextType {
   installadoresComissoes: InstaladorComissao[];
   summary: ComissoesSummary;
   loading: boolean;
-  selectedPeriod: Date;
-  setSelectedPeriod: (date: Date) => void;
+  selectedPeriod: DateRange | undefined;
+  setSelectedPeriod: (date: DateRange | undefined) => void;
   refreshCommissions: () => Promise<void>;
 }
 
@@ -51,17 +52,20 @@ export const CommissionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
     comissao_media: 0
   });
   const [loading, setLoading] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState(new Date());
+  const [selectedPeriod, setSelectedPeriod] = useState<DateRange | undefined>({
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date())
+  });
   const { user } = useAuth();
   const { toast } = useToast();
 
   const refreshCommissions = async () => {
-    if (!user) return;
+    if (!user || !selectedPeriod?.from || !selectedPeriod?.to) return;
     
     setLoading(true);
     try {
-      const startDate = startOfMonth(selectedPeriod).toISOString();
-      const endDate = endOfMonth(selectedPeriod).toISOString();
+      const startDate = selectedPeriod.from.toISOString();
+      const endDate = selectedPeriod.to.toISOString();
 
       // Buscar pedidos com vendedores no período
       const { data: pedidosVendedores, error: pedidosVendedoresError } = await supabase

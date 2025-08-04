@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import type { DateRange } from "react-day-picker";
 import { CalendarIcon, DollarSign, TrendingUp, FileText, Users, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCommissions, VendedorComissao, InstaladorComissao } from "@/contexts/CommissionsContext";
@@ -81,35 +82,44 @@ export default function Commissions() {
       trabalhos: Math.floor(Math.random() * funcionario.total_trabalhos * 0.4) + 1
     }));
   };
-  return <div className="space-y-6">
+  return <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Comissões dos Funcionários</h1>
-          
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Comissões dos Funcionários</h1>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:gap-2">
           {/* Pesquisa */}
-          <div className="relative">
-            <input type="text" placeholder="Pesquisar funcionários..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring w-64" />
+          <div className="relative flex-1 sm:flex-initial">
+            <input 
+              type="text" 
+              placeholder="Pesquisar funcionários..." 
+              value={searchTerm} 
+              onChange={e => setSearchTerm(e.target.value)} 
+              className="w-full sm:w-64 px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring" 
+            />
           </div>
 
           {/* Seletor de Período */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className={cn("w-full sm:w-[240px] justify-start text-left font-normal", !selectedPeriod && "text-muted-foreground")}>
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {selectedPeriod ? format(selectedPeriod, "MMMM 'de' yyyy", {
-                locale: ptBR
-              }) : <span>Selecione o período</span>}
+              <Button variant="outline" className={cn("w-full sm:w-auto justify-start text-left font-normal", !selectedPeriod && "text-muted-foreground")}>
+                <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                <span className="truncate">
+                  {selectedPeriod?.from && selectedPeriod?.to 
+                    ? `${format(selectedPeriod.from, "dd/MM/yyyy", { locale: ptBR })} - ${format(selectedPeriod.to, "dd/MM/yyyy", { locale: ptBR })}`
+                    : "Selecione o período"
+                  }
+                </span>
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start" side="bottom">
               <Calendar 
-                mode="single" 
+                mode="range" 
                 selected={selectedPeriod} 
-                onSelect={date => date && setSelectedPeriod(date)} 
+                onSelect={setSelectedPeriod} 
+                numberOfMonths={1}
                 initialFocus 
                 locale={ptBR}
                 className="p-3 pointer-events-auto" 
@@ -139,41 +149,43 @@ export default function Commissions() {
             </div> : filteredFuncionarios.length === 0 ? <div className="text-center py-8 text-muted-foreground">
               {searchTerm ? 'Nenhum funcionário encontrado para a pesquisa' : 'Nenhuma comissão encontrada para este período'}
             </div> : <div className="space-y-2">
-              {filteredFuncionarios.map(funcionario => <div key={`${funcionario.tipo}-${funcionario.id}`} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 cursor-pointer transition-colors" onClick={() => setSelectedFuncionario(funcionario)}>
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback className="text-sm font-semibold">
+              {filteredFuncionarios.map(funcionario => <div key={`${funcionario.tipo}-${funcionario.id}`} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 border rounded-lg hover:bg-accent/50 cursor-pointer transition-colors" onClick={() => setSelectedFuncionario(funcionario)}>
+                  <div className="flex items-center gap-3 flex-1">
+                    <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0">
+                      <AvatarFallback className="text-xs sm:text-sm font-semibold">
                         {getInitials(funcionario.nome)}
                       </AvatarFallback>
                     </Avatar>
                     
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-lg">{funcionario.nome}</h3>
-                        <Badge variant={funcionario.tipo === 'Vendedor' ? 'default' : 'secondary'} className="text-xs">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                        <h3 className="font-semibold text-base sm:text-lg truncate">{funcionario.nome}</h3>
+                        <Badge variant={funcionario.tipo === 'Vendedor' ? 'default' : 'secondary'} className="text-xs w-fit">
                           {funcionario.tipo}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">{funcionario.email}</p>
-                      <div className="flex items-center gap-4 mt-1">
-                        <span className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground truncate">{funcionario.email}</p>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-1">
+                        <span className="text-xs sm:text-sm text-muted-foreground">
                           {funcionario.comissao}% de comissão
                         </span>
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-xs sm:text-sm text-muted-foreground">
                           {funcionario.total_trabalhos} {funcionario.tipo === 'Vendedor' ? 'venda' : 'instalação'}{funcionario.total_trabalhos !== 1 ? funcionario.tipo === 'Vendedor' ? 's' : 'ões' : ''}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-green-600">
-                      {formatCurrency(funcionario.comissao_total)}
+                  <div className="flex items-center justify-between sm:flex-col sm:text-right">
+                    <div className="flex flex-col">
+                      <div className="text-base sm:text-lg font-bold text-green-600">
+                        {formatCurrency(funcionario.comissao_total)}
+                      </div>
+                      <div className="text-xs sm:text-sm text-muted-foreground">
+                        de {formatCurrency(funcionario.valor_total_trabalhos)}
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      de {formatCurrency(funcionario.valor_total_trabalhos)}
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground mt-1 mx-auto" />
+                    <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0 sm:mt-1" />
                   </div>
                 </div>)}
             </div>}
