@@ -6,7 +6,6 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Package, User, DollarSign } from "lucide-react";
 import { useInstaladores } from "@/contexts/InstalladoresContext";
-
 interface ProductWithInstaller {
   id: string;
   descricao: string;
@@ -17,16 +16,18 @@ interface ProductWithInstaller {
   instalador_nome?: string;
   comissao_calculada?: number;
 }
-
 interface ProductInstallerStepProps {
   products: any[];
   onProductInstallersChange: (products: ProductWithInstaller[]) => void;
 }
-
-export function ProductInstallerStep({ products, onProductInstallersChange }: ProductInstallerStepProps) {
-  const { instaladores } = useInstaladores();
+export function ProductInstallerStep({
+  products,
+  onProductInstallersChange
+}: ProductInstallerStepProps) {
+  const {
+    instaladores
+  } = useInstaladores();
   const [productsWithInstallers, setProductsWithInstallers] = useState<ProductWithInstaller[]>([]);
-
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -47,9 +48,7 @@ export function ProductInstallerStep({ products, onProductInstallersChange }: Pr
         } else if (produto.total && produto.quantidade) {
           valorUnitario = parseFloat(produto.total) / (produto.quantidade || 1);
         }
-
         valorTotal = valorUnitario * (produto.quantidade || 1);
-
         return {
           id: `produto-${index}`,
           descricao: produto.descricao || 'Produto',
@@ -61,18 +60,15 @@ export function ProductInstallerStep({ products, onProductInstallersChange }: Pr
           comissao_calculada: 0
         };
       });
-
       setProductsWithInstallers(formattedProducts);
       onProductInstallersChange(formattedProducts);
     }
   }, [products]);
-
   const updateProductInstaller = (productId: string, installerId: string | undefined) => {
     const updatedProducts = productsWithInstallers.map(product => {
       if (product.id === productId) {
         const installer = instaladores.find(i => i.id === installerId);
         const comissaoCalculada = installer ? product.valor_total * (installer.comissao / 100) : 0;
-        
         return {
           ...product,
           instalador_id: installerId,
@@ -82,61 +78,14 @@ export function ProductInstallerStep({ products, onProductInstallersChange }: Pr
       }
       return product;
     });
-
     setProductsWithInstallers(updatedProducts);
     onProductInstallersChange(updatedProducts);
   };
-
   const totalCommissions = productsWithInstallers.reduce((sum, product) => sum + (product.comissao_calculada || 0), 0);
   const productsWithInstaller = productsWithInstallers.filter(p => p.instalador_id).length;
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Resumo */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Total de Produtos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{productsWithInstallers.length}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Comissões Totais
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(totalCommissions)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Com Instalador
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {productsWithInstaller}
-            </div>
-            <div className="text-xs text-muted-foreground">
-              de {productsWithInstallers.length} produtos
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      
 
       {/* Lista de Produtos */}
       <Card>
@@ -150,14 +99,10 @@ export function ProductInstallerStep({ products, onProductInstallersChange }: Pr
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {productsWithInstallers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+          {productsWithInstallers.length === 0 ? <div className="text-center py-8 text-muted-foreground">
               Nenhum produto encontrado
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {productsWithInstallers.map((product) => (
-                <div key={product.id} className="flex flex-col lg:flex-row lg:items-center gap-4 p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+            </div> : <div className="space-y-4">
+              {productsWithInstallers.map(product => <div key={product.id} className="flex flex-col lg:flex-row lg:items-center gap-4 p-4 border rounded-lg hover:bg-accent/50 transition-colors">
                   {/* Informações do Produto */}
                   <div className="flex-1 space-y-2">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2">
@@ -179,20 +124,15 @@ export function ProductInstallerStep({ products, onProductInstallersChange }: Pr
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 lg:w-80">
                     <div className="flex-1">
                       <Label className="text-sm font-medium mb-1 block">Instalador</Label>
-                      <Select
-                        value={product.instalador_id || "none"}
-                        onValueChange={(value) => updateProductInstaller(product.id, value === "none" ? undefined : value)}
-                      >
+                      <Select value={product.instalador_id || "none"} onValueChange={value => updateProductInstaller(product.id, value === "none" ? undefined : value)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecionar instalador" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">Nenhum instalador</SelectItem>
-                          {instaladores.map((installer) => (
-                            <SelectItem key={installer.id} value={installer.id}>
+                          {instaladores.map(installer => <SelectItem key={installer.id} value={installer.id}>
                               {installer.nome} ({installer.comissao}%)
-                            </SelectItem>
-                          ))}
+                            </SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
@@ -203,19 +143,14 @@ export function ProductInstallerStep({ products, onProductInstallersChange }: Pr
                       <div className="text-lg font-bold text-green-600">
                         {formatCurrency(product.comissao_calculada || 0)}
                       </div>
-                      {product.instalador_id && (
-                        <div className="text-xs text-muted-foreground">
+                      {product.instalador_id && <div className="text-xs text-muted-foreground">
                           {instaladores.find(i => i.id === product.instalador_id)?.comissao || 0}%
-                        </div>
-                      )}
+                        </div>}
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                </div>)}
+            </div>}
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 }
