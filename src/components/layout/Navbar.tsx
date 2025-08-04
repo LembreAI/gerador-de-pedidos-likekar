@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, FileText, Users, Wrench, Settings, Menu, X, LogOut } from "lucide-react";
+import { PlusCircle, FileText, Users, Wrench, DollarSign, Settings, Menu, X, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 const menuItems = [{
   id: "novo-pedido",
@@ -30,6 +30,11 @@ const menuItems = [{
   label: "Instaladores",
   icon: Wrench,
   path: "/instaladores"
+}, {
+  id: "comissoes",
+  label: "Comissões",
+  icon: DollarSign,
+  path: "/comissoes"
 }, {
   id: "configuracoes",
   label: "Configurações",

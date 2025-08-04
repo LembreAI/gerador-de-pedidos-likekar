@@ -9,11 +9,13 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { VendedoresProvider } from "@/contexts/VendedoresContext";
 import { InstalladoresProvider } from "@/contexts/InstalladoresContext";
 import { ClientesProvider } from "@/contexts/ClientesContext";
+import { CommissionsProvider } from "@/contexts/CommissionsContext";
 import Index from "./pages/Index";
 import Orders from "./pages/Orders";
 import Clients from "./pages/Clients";
 import Vendors from "./pages/Vendors";
 import Installers from "./pages/Installers";
+import Commissions from "./pages/Commissions";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -29,7 +31,8 @@ const App = () => (
       <VendedoresProvider>
         <InstalladoresProvider>
           <ClientesProvider>
-            <OrdersProvider>
+            <CommissionsProvider>
+              <OrdersProvider>
             <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -42,16 +45,18 @@ const App = () => (
                    <Route path="/clientes" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
                   <Route path="/cliente/:id" element={<ProtectedRoute><ClientDetails /></ProtectedRoute>} />
                   <Route path="/cliente/:id/editar" element={<ProtectedRoute><ClientEdit /></ProtectedRoute>} />
-                  <Route path="/vendedores" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
-                  <Route path="/instaladores" element={<ProtectedRoute><Installers /></ProtectedRoute>} />
-                  <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                   <Route path="/vendedores" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
+                   <Route path="/instaladores" element={<ProtectedRoute><Installers /></ProtectedRoute>} />
+                   <Route path="/comissoes" element={<ProtectedRoute><Commissions /></ProtectedRoute>} />
+                   <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Layout>
             </BrowserRouter>
            </TooltipProvider>
-           </OrdersProvider>
+              </OrdersProvider>
+            </CommissionsProvider>
           </ClientesProvider>
          </InstalladoresProvider>
        </VendedoresProvider>
