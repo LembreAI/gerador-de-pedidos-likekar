@@ -53,11 +53,24 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
     } catch (error) {
       console.error('❌ Erro ao processar PDF:', error);
-      toast({
-        title: "Erro ao processar arquivo",
-        description: error instanceof Error ? error.message : "Não foi possível extrair os dados do PDF",
-        variant: "destructive"
-      });
+      
+      // Verificar se é erro de pedido duplicado
+      const errorMessage = error instanceof Error ? error.message : "Não foi possível extrair os dados do PDF";
+      
+      if (errorMessage.startsWith('PEDIDO_DUPLICADO:')) {
+        const message = errorMessage.replace('PEDIDO_DUPLICADO:', '');
+        toast({
+          title: "Pedido já existe",
+          description: message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Erro ao processar arquivo",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsProcessing(false);
     }

@@ -258,52 +258,11 @@ const Index = () => {
       
       console.log(`💰 Valor total calculado: R$ ${valorTotal.toFixed(2)}`);
 
-      // Verificar se já existe um pedido com este número
-      const numeroOriginal = orderData.pedido.numero;
-      console.log(`📝 Verificando se pedido ${numeroOriginal} já existe...`);
-      console.log(`📊 User ID atual:`, (await supabase.auth.getUser()).data.user?.id);
-      
-      // Buscar todos os pedidos do usuário para debug
-      const { data: allUserOrders, error: debugError } = await supabase
-        .from('pedidos')
-        .select('id, responsavel_nome')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
-      
-      console.log(`📋 Pedidos existentes do usuário:`, allUserOrders);
-      console.log(`❌ Erro na busca de debug:`, debugError);
-      
-      const { data: existingOrder, error: checkError } = await supabase
-        .from('pedidos')
-        .select('id, user_id, responsavel_nome, created_at')
-        .eq('id', numeroOriginal)
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-        .maybeSingle();
-
-      console.log(`🔍 Resultado da verificação:`, existingOrder);
-      console.log(`❌ Erro na verificação:`, checkError);
-
-      if (existingOrder) {
-        console.log(`⚠️ Pedido ${numeroOriginal} já existe! Dados encontrados:`, existingOrder);
-        
-        toast({
-          title: "Pedido já existe",
-          description: `O pedido ${numeroOriginal} já foi salvo anteriormente em ${new Date(existingOrder.created_at).toLocaleString()}.`,
-          variant: "destructive"
-        });
-        
-        if (goToOrders) {
-          navigate('/pedidos');
-        }
-        return;
-      }
-
-      console.log(`✅ Pedido ${numeroOriginal} não existe, pode criar.`);
-
-      console.log(`✅ Número ${numeroOriginal} está disponível, criando pedido...`);
+      console.log(`✅ Criando pedido ${orderData.pedido.numero}...`);
 
       // Salvar o pedido com dados originais do PDF
       const pedidoData = {
-        id: numeroOriginal,
+        id: orderData.pedido.numero,
         user_id: (await supabase.auth.getUser()).data.user?.id,
         cliente_id: clienteId,
         veiculo_id: veiculo.id,
@@ -330,7 +289,7 @@ const Index = () => {
       const user = (await supabase.auth.getUser()).data.user;
       if (!user) throw new Error('Usuário não autenticado');
       
-      const fileName = `${user.id}/${numeroOriginal}_${Date.now()}.pdf`;
+      const fileName = `${user.id}/${orderData.pedido.numero}_${Date.now()}.pdf`;
       console.log('📂 Nome do arquivo:', fileName);
       
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -433,7 +392,7 @@ const Index = () => {
 
       toast({
         title: "Pedido salvo com sucesso!",
-        description: `Pedido ${numeroOriginal} foi criado.`
+        description: `Pedido ${orderData.pedido.numero} foi criado.`
       });
 
       // Navegar para pedidos se solicitado

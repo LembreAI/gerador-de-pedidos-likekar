@@ -99,6 +99,29 @@ async function extractWithAI(file: File): Promise<ExtractedData> {
       throw new Error('Estrutura de dados inválida retornada pela IA');
     }
 
+    // VERIFICAR SE PEDIDO JÁ EXISTE ANTES DE CONTINUAR
+    if (extractedData.pedido?.numero) {
+      const numeroOriginal = extractedData.pedido.numero;
+      console.log(`📝 Verificando se pedido ${numeroOriginal} já existe...`);
+      
+      const { data: existingOrder, error: checkError } = await supabase
+        .from('pedidos')
+        .select('id, responsavel_nome, created_at')
+        .eq('id', numeroOriginal)
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .maybeSingle();
+
+      console.log(`🔍 Resultado da verificação:`, existingOrder);
+      console.log(`❌ Erro na verificação:`, checkError);
+
+      if (existingOrder) {
+        console.log(`⚠️ Pedido ${numeroOriginal} já existe! Cancelando processo.`);
+        throw new Error(`PEDIDO_DUPLICADO:O pedido ${numeroOriginal} já foi salvo anteriormente em ${new Date(existingOrder.created_at).toLocaleString()}.`);
+      }
+
+      console.log(`✅ Pedido ${numeroOriginal} não existe, pode continuar.`);
+    }
+
     return extractedData;
 
   } catch (error) {
