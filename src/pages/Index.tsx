@@ -139,8 +139,8 @@ const Index = () => {
     try {
       // Primeiro, salvar ou buscar o cliente
       const clienteData = {
-        nome: orderData.cliente.nome,
-        telefone: orderData.cliente.telefone,
+        nome: orderData.cliente?.nome || 'N/A',
+        telefone: orderData.cliente?.telefone || '',
         email: orderData.cliente.email || '',
         endereco: orderData.cliente.endereco || '',
         cidade: orderData.cliente.cidade || '',
@@ -301,8 +301,8 @@ const Index = () => {
         instalador_id: instaladorId,
         valor_total: valorTotal,
         status: 'pendente',
-        responsavel_nome: orderData.cliente.nome,
-        responsavel_telefone: orderData.cliente.telefone || '',
+        responsavel_nome: orderData.cliente?.nome || 'N/A',
+        responsavel_telefone: orderData.cliente?.telefone || '',
         observacoes: orderData.observacoes || '',
         dados_pdf_original: JSON.stringify(orderData) // Salvar dados originais do PDF
       };
@@ -491,10 +491,10 @@ const Index = () => {
                 <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-secondary rounded-lg">
                   <h3 className="font-medium mb-2 text-sm sm:text-base">Dados Extraídos do PDF:</h3>
                   <div className="space-y-1 sm:grid sm:grid-cols-2 sm:gap-2 sm:space-y-0 text-xs sm:text-sm">
-                    <p><strong>Cliente:</strong> {extractedData.cliente.nome}</p>
-                    <p><strong>Pedido:</strong> #{extractedData.pedido.numero}</p>
-                    <p><strong>Total:</strong> {extractedData.totalPedido}</p>
-                    <p><strong>Data:</strong> {extractedData.pedido.data}</p>
+                    <p><strong>Cliente:</strong> {extractedData?.cliente?.nome || 'N/A'}</p>
+                    <p><strong>Pedido:</strong> #{extractedData?.pedido?.numero || 'N/A'}</p>
+                    <p><strong>Total:</strong> {extractedData?.totalPedido || 'N/A'}</p>
+                    <p><strong>Data:</strong> {extractedData?.pedido?.data || 'N/A'}</p>
                   </div>
                 </div>
               )}
@@ -593,11 +593,11 @@ const Index = () => {
                 <div className="bg-muted p-3 sm:p-4 rounded-lg mb-3 sm:mb-4">
                   <h3 className="font-medium mb-2 text-sm sm:text-base">Dados do Cliente (do PDF):</h3>
                   <div className="space-y-1 text-xs sm:text-sm">
-                    <p><strong>Nome:</strong> {extractedData.cliente.nome}</p>
-                    <p><strong>Empresa:</strong> {extractedData.cliente.empresa}</p>
-                    <p><strong>CNPJ:</strong> {extractedData.cliente.cnpj}</p>
-                    <p><strong>Telefone:</strong> {extractedData.cliente.telefone}</p>
-                    <p><strong>E-mail:</strong> {extractedData.cliente.email}</p>
+                    <p><strong>Nome:</strong> {extractedData?.cliente?.nome || 'N/A'}</p>
+                    <p><strong>Empresa:</strong> {extractedData?.cliente?.empresa || 'N/A'}</p>
+                    <p><strong>CNPJ:</strong> {extractedData?.cliente?.cnpj || 'N/A'}</p>
+                    <p><strong>Telefone:</strong> {extractedData?.cliente?.telefone || 'N/A'}</p>
+                    <p><strong>E-mail:</strong> {extractedData?.cliente?.email || 'N/A'}</p>
                   </div>
                 </div>
               )}
