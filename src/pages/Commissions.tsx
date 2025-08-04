@@ -1,22 +1,36 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, DollarSign, TrendingUp, FileText, Users } from "lucide-react";
+import { CalendarIcon, DollarSign, TrendingUp, FileText, Users, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCommissions } from "@/contexts/CommissionsContext";
+import { useCommissions, VendedorComissao, InstaladorComissao } from "@/contexts/CommissionsContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
+
+// Tipo unificado para funcionários
+interface FuncionarioComissao {
+  id: string;
+  nome: string;
+  email: string;
+  comissao: number;
+  total_trabalhos: number;
+  valor_total_trabalhos: number;
+  comissao_total: number;
+  tipo: 'Vendedor' | 'Instalador';
+}
 
 export default function Commissions() {
   const { user } = useAuth();
+  const [selectedFuncionario, setSelectedFuncionario] = useState<FuncionarioComissao | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const {
     vendedoresComissoes,
     installadoresComissoes,
@@ -47,19 +61,39 @@ export default function Commissions() {
       .join('');
   };
 
-  // Dados para o gráfico
-  const chartData = [
+  // Combinar vendedores e instaladores numa lista única
+  const funcionarios: FuncionarioComissao[] = [
     ...vendedoresComissoes.map(v => ({
-      nome: v.nome,
-      comissao: v.comissao_total,
-      tipo: 'Vendedor'
+      ...v,
+      total_trabalhos: v.total_vendas,
+      valor_total_trabalhos: v.valor_total_vendas,
+      tipo: 'Vendedor' as const
     })),
     ...installadoresComissoes.map(i => ({
-      nome: i.nome,
-      comissao: i.comissao_total,
-      tipo: 'Instalador'
+      ...i,
+      total_trabalhos: i.total_instalacoes,
+      valor_total_trabalhos: i.valor_total_instalacoes,
+      tipo: 'Instalador' as const
     }))
-  ].sort((a, b) => b.comissao - a.comissao).slice(0, 10);
+  ].sort((a, b) => b.comissao_total - a.comissao_total);
+
+  // Filtrar funcionários baseado na pesquisa
+  const filteredFuncionarios = funcionarios.filter(funcionario =>
+    funcionario.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    funcionario.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    funcionario.tipo.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Gerar dados do gráfico para o funcionário selecionado (simulado por mês)
+  const generateChartData = (funcionario: FuncionarioComissao) => {
+    // Simulando dados mensais (em uma implementação real, você buscaria do backend)
+    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
+    return months.map(month => ({
+      mes: month,
+      comissao: Math.random() * funcionario.comissao_total * 0.3 + funcionario.comissao_total * 0.1,
+      trabalhos: Math.floor(Math.random() * funcionario.total_trabalhos * 0.4) + 1
+    }));
+  };
 
   return (
     <div className="space-y-6">
@@ -72,34 +106,47 @@ export default function Commissions() {
           </p>
         </div>
 
-        {/* Seletor de Período */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "w-[240px] justify-start text-left font-normal",
-                !selectedPeriod && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {selectedPeriod ? (
-                format(selectedPeriod, "MMMM 'de' yyyy", { locale: ptBR })
-              ) : (
-                <span>Selecione o período</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={selectedPeriod}
-              onSelect={(date) => date && setSelectedPeriod(date)}
-              initialFocus
-              className="p-3 pointer-events-auto"
+        <div className="flex gap-2">
+          {/* Pesquisa */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Pesquisar funcionários..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring w-64"
             />
-          </PopoverContent>
-        </Popover>
+          </div>
+
+          {/* Seletor de Período */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-[240px] justify-start text-left font-normal",
+                  !selectedPeriod && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {selectedPeriod ? (
+                  format(selectedPeriod, "MMMM 'de' yyyy", { locale: ptBR })
+                ) : (
+                  <span>Selecione o período</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={selectedPeriod}
+                onSelect={(date) => date && setSelectedPeriod(date)}
+                initialFocus
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
       {/* Cards de Resumo */}
@@ -162,183 +209,192 @@ export default function Commissions() {
         </Card>
       </div>
 
-      {/* Gráfico de Comissões */}
-      {!loading && chartData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Top 10 - Comissões por Funcionário</CardTitle>
-            <CardDescription>
-              Ranking dos funcionários com maiores comissões no período
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="nome" 
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
-                  fontSize={12}
-                />
-                <YAxis 
-                  tickFormatter={(value) => `R$ ${value.toLocaleString()}`}
-                  fontSize={12}
-                />
-                <Tooltip 
-                  formatter={(value: number) => [formatCurrency(value), 'Comissão']}
-                  labelFormatter={(label) => `Funcionário: ${label}`}
-                />
-                <Bar dataKey="comissao" fill="hsl(var(--primary))" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Tabelas */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Tabela de Vendedores */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Comissões - Vendedores
-            </CardTitle>
-            <CardDescription>
-              Comissões baseadas nas vendas realizadas
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
-            ) : vendedoresComissoes.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Nenhuma comissão de vendedor encontrada para este período
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Vendedor</TableHead>
-                    <TableHead className="text-center">Vendas</TableHead>
-                    <TableHead className="text-right">Comissão</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {vendedoresComissoes.map((vendedor) => (
-                    <TableRow key={vendedor.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs">
-                              {getInitials(vendedor.nome)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{vendedor.nome}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {vendedor.comissao}% de comissão
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="secondary">
-                          {vendedor.total_vendas} venda{vendedor.total_vendas !== 1 ? 's' : ''}
+      {/* Lista de Funcionários */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Funcionários com Comissões
+          </CardTitle>
+          <CardDescription>
+            Clique em um funcionário para ver o gráfico detalhado das comissões
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+          ) : filteredFuncionarios.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {searchTerm ? 'Nenhum funcionário encontrado para a pesquisa' : 'Nenhuma comissão encontrada para este período'}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filteredFuncionarios.map((funcionario) => (
+                <div
+                  key={`${funcionario.tipo}-${funcionario.id}`}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 cursor-pointer transition-colors"
+                  onClick={() => setSelectedFuncionario(funcionario)}
+                >
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-12 w-12">
+                      <AvatarFallback className="text-sm font-semibold">
+                        {getInitials(funcionario.nome)}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg">{funcionario.nome}</h3>
+                        <Badge 
+                          variant={funcionario.tipo === 'Vendedor' ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {funcionario.tipo}
                         </Badge>
-                        <div className="text-sm text-muted-foreground mt-1">
-                          {formatCurrency(vendedor.valor_total_vendas)}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="font-bold text-green-600">
-                          {formatCurrency(vendedor.comissao_total)}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{funcionario.email}</p>
+                      <div className="flex items-center gap-4 mt-1">
+                        <span className="text-sm text-muted-foreground">
+                          {funcionario.comissao}% de comissão
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {funcionario.total_trabalhos} {funcionario.tipo === 'Vendedor' ? 'venda' : 'instalação'}{funcionario.total_trabalhos !== 1 ? (funcionario.tipo === 'Vendedor' ? 's' : 'ões') : ''}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
-        {/* Tabela de Instaladores */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Comissões - Instaladores
-            </CardTitle>
-            <CardDescription>
-              Comissões baseadas nas instalações realizadas
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-green-600">
+                      {formatCurrency(funcionario.comissao_total)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      de {formatCurrency(funcionario.valor_total_trabalhos)}
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground mt-1 mx-auto" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Dialog com Gráfico Detalhado */}
+      <Dialog open={!!selectedFuncionario} onOpenChange={() => setSelectedFuncionario(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback>
+                  {selectedFuncionario ? getInitials(selectedFuncionario.nome) : ''}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="flex items-center gap-2">
+                  {selectedFuncionario?.nome}
+                  <Badge 
+                    variant={selectedFuncionario?.tipo === 'Vendedor' ? 'default' : 'secondary'}
+                    className="text-xs"
+                  >
+                    {selectedFuncionario?.tipo}
+                  </Badge>
+                </div>
               </div>
-            ) : installadoresComissoes.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Nenhuma comissão de instalador encontrada para este período
+            </DialogTitle>
+            <DialogDescription>
+              Histórico de comissões e performance no período selecionado
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedFuncionario && (
+            <div className="space-y-6">
+              {/* Cards de Resumo do Funcionário */}
+              <div className="grid gap-4 md:grid-cols-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Total de Comissões</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600">
+                      {formatCurrency(selectedFuncionario.comissao_total)}
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">% Comissão</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {selectedFuncionario.comissao}%
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">
+                      {selectedFuncionario.tipo === 'Vendedor' ? 'Vendas' : 'Instalações'}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {selectedFuncionario.total_trabalhos}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Valor Total</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {formatCurrency(selectedFuncionario.valor_total_trabalhos)}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Instalador</TableHead>
-                    <TableHead className="text-center">Instalações</TableHead>
-                    <TableHead className="text-right">Comissão</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {installadoresComissoes.map((instalador) => (
-                    <TableRow key={instalador.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs">
-                              {getInitials(instalador.nome)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{instalador.nome}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {instalador.comissao}% de comissão
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="secondary">
-                          {instalador.total_instalacoes} instalação{instalador.total_instalacoes !== 1 ? 'ões' : ''}
-                        </Badge>
-                        <div className="text-sm text-muted-foreground mt-1">
-                          {formatCurrency(instalador.valor_total_instalacoes)}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="font-bold text-green-600">
-                          {formatCurrency(instalador.comissao_total)}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+
+              {/* Gráfico de Comissões por Mês */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Evolução das Comissões</CardTitle>
+                  <CardDescription>
+                    Histórico mensal de comissões (dados simulados)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={generateChartData(selectedFuncionario)}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="mes" />
+                      <YAxis tickFormatter={(value) => `R$ ${value.toLocaleString()}`} />
+                      <Tooltip 
+                        formatter={(value: number) => [formatCurrency(value), 'Comissão']}
+                        labelFormatter={(label) => `Mês: ${label}`}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="comissao" 
+                        stroke="hsl(var(--primary))" 
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
