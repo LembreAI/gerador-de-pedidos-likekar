@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, FileText, X, Bug } from 'lucide-react';
+import { Upload, FileText, X } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { extractDataFromPDF } from '@/services/pdfProcessor';
 
@@ -27,7 +27,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedData, setExtractedData] = useState<any>(null);
-  const [debugMode, setDebugMode] = useState(false);
   const { toast } = useToast();
 
   const processFile = async (file: File) => {
@@ -42,7 +41,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       console.log('🚀 Iniciando extração real do PDF:', file.name);
       
       // Usar extração real de PDF
-      const extractedData = await extractDataFromPDF(file, debugMode);
+      const extractedData = await extractDataFromPDF(file, false);
       
       setExtractedData(extractedData);
       onDataExtracted(extractedData);
@@ -104,14 +103,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     setIsProcessing(false);
   };
 
-  const toggleDebugMode = () => {
-    setDebugMode(!debugMode);
-    toast({
-      title: debugMode ? "Modo Debug Desabilitado" : "Modo Debug Habilitado",
-      description: debugMode ? "Logs reduzidos" : "Logs detalhados ativados",
-    });
-  };
-
   if (uploadedFile) {
     return (
       <Card className="w-full">
@@ -166,22 +157,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                   )}
                 </div>
               </div>
-              
-              {debugMode && extractedData.debugInfo && (
-                <div className="p-4 bg-muted rounded-lg">
-                  <h4 className="font-medium text-destructive mb-2">🔍 Debug Info:</h4>
-                  <div className="space-y-2 text-xs">
-                    <p><strong>Páginas processadas:</strong> {extractedData.debugInfo.pagesProcessed}</p>
-                    <p><strong>Tamanho do texto:</strong> {extractedData.debugInfo.textLength} caracteres</p>
-                    <details>
-                      <summary className="cursor-pointer font-medium">Texto completo extraído</summary>
-                      <pre className="mt-2 p-2 bg-background rounded text-xs overflow-auto max-h-40">
-                        {extractedData.debugInfo.fullText}
-                      </pre>
-                    </details>
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </CardContent>
@@ -206,27 +181,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           }`} />
           <h3 className="text-lg font-medium mb-2">{title}</h3>
           <p className="text-muted-foreground mb-4">{description}</p>
-          <div className="space-y-4">
-            <Button variant="outline">
-              Selecionar Arquivo PDF
-            </Button>
-            
-            <div className="flex items-center justify-center space-x-2">
-              <Button
-                variant={debugMode ? "default" : "outline"}
-                size="sm"
-                onClick={toggleDebugMode}
-                className="text-xs"
-              >
-                <Bug className="h-3 w-3 mr-1" />
-                {debugMode ? "Debug ON" : "Debug OFF"}
-              </Button>
-            </div>
-            
-            <p className="text-xs text-muted-foreground">
-              Máximo {maxSize / (1024 * 1024)}MB • Debug: {debugMode ? "Habilitado" : "Desabilitado"}
-            </p>
-          </div>
+          <Button variant="outline">
+            Selecionar Arquivo PDF
+          </Button>
+          <p className="text-xs text-muted-foreground mt-2">
+            Máximo {maxSize / (1024 * 1024)}MB
+          </p>
         </div>
       </CardContent>
     </Card>

@@ -147,11 +147,15 @@ function extractClientData(text: string) {
   console.log('👤 Extraindo dados do cliente...');
   
   const clientData = {
-    nome: extractPattern(text, /(?:cliente|nome|para|destinatário)[:\s]*([A-Za-zÀ-ÿ\s]+?)(?:\s+(?:cpf|cnpj|rg|telefone|tel|fone)|\n|$)/i, 'Nome do cliente') ||
-          extractPattern(text, /^([A-Z][A-Za-zÀ-ÿ\s]{5,}?)(?:\s+\d|\n)/m, 'Nome alternativo'),
-    cpfCnpj: extractPattern(text, /(?:cpf|cnpj)[:\s]*([0-9\.\-\/\s]{11,18})/i, 'CPF/CNPJ'),
+    nome: extractPattern(text, /(?:cliente|para|destinatário|nome)[:\s]*([A-ZÁÊÃÇÕ][A-Za-zÀ-ÿ\s]{5,})(?:\s+(?:cpf|cnpj|rg|telefone|tel|fone|endereço)|\n|$)/i, 'Nome do cliente') ||
+          extractPattern(text, /^([A-ZÁÊÃÇÕ][A-Za-zÀ-ÿ\s]{8,}?)(?:\s+\d|\n)/m, 'Nome alternativo') ||
+          extractPattern(text, /nome[:\s]*([A-ZÁÊÃÇÕ][A-Za-zÀ-ÿ\s]{5,})/i, 'Nome simples'),
+    cpfCnpj: extractPattern(text, /(?:cpf|cnpj)[:\s]*([0-9\.\-\/\s]{11,18})/i, 'CPF/CNPJ') ||
+             extractPattern(text, /([0-9]{3}\.[0-9]{3}\.[0-9]{3}\-[0-9]{2})/i, 'CPF formato') ||
+             extractPattern(text, /([0-9]{2}\.[0-9]{3}\.[0-9]{3}\/[0-9]{4}\-[0-9]{2})/i, 'CNPJ formato'),
     endereco: extractPattern(text, /(?:endereço|endereco|rua|av|avenida)[:\s]*([^\n\r]+)/i, 'Endereço'),
-    telefone: extractPattern(text, /(?:telefone|tel|fone|celular)[:\s]*([0-9\(\)\s\-]{8,})/i, 'Telefone'),
+    telefone: extractPattern(text, /(?:telefone|tel|fone|celular)[:\s]*([0-9\(\)\s\-]{8,})/i, 'Telefone') ||
+              extractPattern(text, /(\([0-9]{2}\)\s*[0-9]{4,5}\-[0-9]{4})/i, 'Telefone formato'),
     email: extractPattern(text, /(?:e-mail|email)[:\s]*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i, 'Email')
   };
   
@@ -162,10 +166,14 @@ function extractOrderData(text: string) {
   console.log('📋 Extraindo dados do pedido...');
   
   const orderData = {
-    numero: extractPattern(text, /(?:pedido|nº|número|no\.?|order)[:\s#]*([0-9]{3,})/i, 'Número do pedido'),
-    data: extractPattern(text, /(?:data|emissão|emitido)[:\s]*([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2,4})/i, 'Data do pedido'),
-    formaPagamento: extractPattern(text, /(?:pagamento|forma|condições|condição)[:\s]*([^\n\r]{3,50})/i, 'Forma de pagamento') ||
-                   extractPattern(text, /(\d+x?\s*(?:de\s*)?(?:R\$\s*)?[0-9.,]+)/i, 'Parcelamento')
+    numero: extractPattern(text, /(?:pedido|nº|número|no\.?|order|nota)[:\s#]*([0-9]{2,})/i, 'Número do pedido') ||
+            extractPattern(text, /(?:^|\s)([0-9]{3,})\s*(?:pedido|order)/i, 'Número antes da palavra pedido') ||
+            extractPattern(text, /(?:código|cod)[:\s]*([0-9]{3,})/i, 'Código do pedido'),
+    data: extractPattern(text, /(?:data|emissão|emitido|em)[:\s]*([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2,4})/i, 'Data do pedido') ||
+          extractPattern(text, /([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{4})/i, 'Data formato'),
+    formaPagamento: extractPattern(text, /(?:pagamento|forma|condições|condição|parcelado|parcelas)[:\s]*([^\n\r]{3,100})/i, 'Forma de pagamento') ||
+                   extractPattern(text, /(\d+x?\s*(?:de\s*)?(?:R\$\s*)?[0-9.,]+)/i, 'Parcelamento') ||
+                   extractPattern(text, /(?:à vista|cartão|dinheiro|pix)/i, 'Forma simples')
   };
   
   return orderData;
@@ -337,38 +345,48 @@ function extractProducts(text: string): ExtractedData['produtos'] {
     }
   }
   
-  // Fallback APENAS para produtos realmente encontrados no texto
+  // Fallback para extrair produtos individuais
   if (products.length === 0) {
-    console.log('⚠️ Nenhum produto encontrado com padrões estruturados. Buscando produtos avulsos...');
+    console.log('⚠️ Nenhum produto encontrado com padrões estruturados. Buscando produtos individuais...');
     
-    // Buscar linhas que contenham palavras-chave de produtos automotivos
+    // Buscar linhas que contenham palavras-chave de produtos automotivos com valores
     const automotiveKeywords = [
       'camera', 'câmera', 'sensor', 'central', 'alarme', 'trava', 
       'multimidia', 'multimídia', 'dvd', 'gps', 'som', 'auto falante',
-      'módulo', 'modulo', 'chicote', 'antena', 'controle'
+      'módulo', 'modulo', 'chicote', 'antena', 'controle', 'pioneer',
+      'kenwood', 'sony', 'jvc', 'alpine', 'positron'
     ];
     
     for (const line of lines) {
       const lowerLine = line.toLowerCase();
       
-      // Verificar se a linha contém palavras-chave e valores
+      // Verificar se a linha contém palavras-chave e valores monetários
       const hasKeyword = automotiveKeywords.some(keyword => lowerLine.includes(keyword));
-      const hasValue = /(?:R\$\s*)?[0-9.,]{3,}/.test(line);
+      const hasValue = /(?:R\$\s*)?[0-9]{2,}[.,][0-9]{2}/.test(line);
       
-      if (hasKeyword && hasValue) {
-        const valores = line.match(/(?:R\$\s*)?([0-9.,]{3,})/g);
-        if (valores) {
+      if (hasKeyword && hasValue && line.length > 10) {
+        console.log(`🔍 Possível produto encontrado na linha: ${line}`);
+        
+        // Extrair valores da linha
+        const valores = line.match(/(?:R\$\s*)?([0-9]{2,}[.,][0-9]{2})/g);
+        if (valores && valores.length > 0) {
           const valor = parseNumber(valores[valores.length - 1]);
           if (valor > 0) {
-            products.push({
-              descricao: cleanDescription(line.replace(/(?:R\$\s*)?[0-9.,]+/g, '').trim()),
-              codigo: `PROD-${products.length + 1}`,
-              quantidade: 1,
-              unitario: valor,
-              desconto: 0,
-              total: valor
-            });
-            console.log(`🔍 Produto avulso encontrado: ${line} - R$ ${valor.toFixed(2)}`);
+            // Limpar descrição removendo números e valores
+            let descricao = line.replace(/(?:R\$\s*)?[0-9.,]+/g, '').trim();
+            descricao = cleanDescription(descricao);
+            
+            if (descricao.length > 5) {
+              products.push({
+                descricao: descricao,
+                codigo: `PROD-${products.length + 1}`,
+                quantidade: 1,
+                unitario: valor,
+                desconto: 0,
+                total: valor
+              });
+              console.log(`✅ Produto individual extraído: ${descricao} - R$ ${valor.toFixed(2)}`);
+            }
           }
         }
       }
@@ -378,7 +396,10 @@ function extractProducts(text: string): ExtractedData['produtos'] {
   console.log(`📦 Total de produtos extraídos: ${products.length}`);
   
   if (products.length === 0) {
-    console.log('❌ NENHUM produto foi encontrado no PDF. Verifique se o formato está correto.');
+    console.log('❌ NENHUM produto foi encontrado no PDF. Verifique se:');
+    console.log('   • O PDF contém uma tabela de produtos');
+    console.log('   • Os valores estão no formato correto (R$ XX,XX)');
+    console.log('   • O texto do PDF é legível (não é uma imagem)');
   }
   
   return products;
