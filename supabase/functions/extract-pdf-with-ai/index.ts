@@ -17,7 +17,7 @@ serve(async (req) => {
     const { pdfBase64 } = await req.json();
 
     if (!pdfBase64) {
-      throw new Error('PDF base64 data is required');
+      throw new Error('PDF text data is required');
     }
 
     console.log('🤖 Iniciando extração via IA...');
@@ -35,13 +35,14 @@ serve(async (req) => {
             role: 'system',
             content: `Você é um especialista em extração de dados de PDFs de recibos/pedidos.
             
-            Analise o PDF e extraia EXATAMENTE as informações em formato JSON.
+            Analise o texto extraído do PDF e extraia EXATAMENTE as informações em formato JSON.
             
             IMPORTANTE: 
             - Se um campo não estiver presente, retorne string vazia "" ou array vazio []
             - NÃO invente dados que não estão no PDF
             - Para produtos, extraia TODOS os itens listados
             - Se o cliente for "Consumidor Final" e não houver nome específico, use "Consumidor Final"
+            - Procure por padrões de dados mesmo que estejam formatados de forma irregular
             
             Retorne APENAS o JSON no formato exato:
             {
@@ -83,19 +84,7 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: 'Extraia os dados deste PDF de recibo/pedido:'
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:application/pdf;base64,${pdfBase64}`,
-                  detail: 'high'
-                }
-              }
-            ]
+            content: `Extraia os dados deste texto de recibo/pedido: ${pdfBase64}`
           }
         ],
         max_tokens: 2000,

@@ -54,30 +54,36 @@ export async function extractDataFromPDF(file: File, useAI = true): Promise<Extr
 
 async function extractWithAI(file: File): Promise<ExtractedData> {
   try {
-    console.log('🤖 Convertendo PDF para base64...');
+    console.log('📄 Extraindo texto do PDF para IA...');
     
-    // Converter arquivo para base64
+    // Configure PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/build/pdf.worker.mjs',
+      import.meta.url
+    ).toString();
+    
+    // Extrair texto do PDF
     const arrayBuffer = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
-    let binary = '';
-    const chunkSize = 0x8000;
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     
-    for (let i = 0; i < uint8Array.length; i += chunkSize) {
-      const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length));
-      binary += String.fromCharCode.apply(null, Array.from(chunk));
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map((item: any) => item.str).join(' ');
+      fullText += pageText + '\n';
     }
     
-    const base64 = btoa(binary);
-    console.log('📁 PDF convertido para base64, tamanho:', base64.length);
+    console.log('📝 Texto extraído para IA, comprimento:', fullText.length);
 
-    // Chamada para edge function
-    const response = await fetch('/functions/v1/extract-pdf-with-ai', {
+    // Chamada para edge function com texto
+    const response = await fetch('https://cdrlihhhsewmiiwbwewi.supabase.co/functions/v1/extract-pdf-with-ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        pdfBase64: base64
+        pdfBase64: fullText
       }),
     });
 
