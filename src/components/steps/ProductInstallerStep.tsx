@@ -180,14 +180,14 @@ export function ProductInstallerStep({ products, onProductInstallersChange }: Pr
                     <div className="flex-1">
                       <Label className="text-sm font-medium mb-1 block">Instalador</Label>
                       <Select
-                        value={product.instalador_id || ""}
-                        onValueChange={(value) => updateProductInstaller(product.id, value || undefined)}
+                        value={product.instalador_id || "none"}
+                        onValueChange={(value) => updateProductInstaller(product.id, value === "none" ? undefined : value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Selecionar instalador" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Nenhum instalador</SelectItem>
+                          <SelectItem value="none">Nenhum instalador</SelectItem>
                           {instaladores.map((installer) => (
                             <SelectItem key={installer.id} value={installer.id}>
                               {installer.nome} ({installer.comissao}%)
