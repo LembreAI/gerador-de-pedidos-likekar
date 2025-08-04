@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StepIndicator } from "@/components/steps/StepIndicator";
+import { ProductInstallerStep } from "@/components/steps/ProductInstallerStep";
 import { FileUpload } from "@/components/upload/FileUpload";
 import { generateLikeKarPDF, PedidoData } from "@/services/likeKarPDFGenerator";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +19,8 @@ import { useNavigate } from "react-router-dom";
 const steps = [
   { id: 1, title: "Upload PDF", description: "Enviar recibo em PDF" },
   { id: 2, title: "Dados do Veículo", description: "Informações do veículo" },
-  { id: 3, title: "Gerar Pedido", description: "Finalizar e gerar o pedido" }
+  { id: 3, title: "Instaladores por Produto", description: "Atribuir instaladores" },
+  { id: 4, title: "Gerar Pedido", description: "Finalizar e gerar o pedido" }
 ];
 
 const Index = () => {
@@ -33,9 +35,9 @@ const Index = () => {
     ano: "",
     cor: "",
     placa: "",
-    instalador: "",
     vendedor: ""
   });
+  const [productsWithInstallers, setProductsWithInstallers] = useState<any[]>([]);
   const { toast } = useToast();
   const { vendedores } = useVendedores();
   const { instaladores } = useInstaladores();
@@ -60,6 +62,8 @@ const Index = () => {
       setCurrentStep(currentStep + 1);
       if (currentStep === 2) {
         setCompletedSteps([...completedSteps, 2]);
+      } else if (currentStep === 3) {
+        setCompletedSteps([...completedSteps, 3]);
       }
     }
   };
@@ -87,9 +91,9 @@ const Index = () => {
           placa: vehicleData.placa
         },
         responsaveis: {
-          instalador: vehicleData.instalador,
           vendedor: vehicleData.vendedor
-        }
+        },
+        produtosComInstaladores: productsWithInstallers
       };
 
       const pdfBytes = await generateLikeKarPDF(orderData);
@@ -223,9 +227,8 @@ const Index = () => {
         veiculo = newVeiculo;
       }
 
-      // Buscar IDs dos vendedor e instalador
+      // Buscar IDs dos vendedor
       let vendedorId = null;
-      let instaladorId = null;
 
       if (orderData.responsaveis.vendedor) {
         const { data: vendedor } = await supabase
@@ -234,15 +237,6 @@ const Index = () => {
           .eq('nome', orderData.responsaveis.vendedor)
           .maybeSingle();
         vendedorId = vendedor?.id;
-      }
-
-      if (orderData.responsaveis.instalador) {
-        const { data: instalador } = await supabase
-          .from('instaladores')
-          .select('id')
-          .eq('nome', orderData.responsaveis.instalador)
-          .maybeSingle();
-        instaladorId = instalador?.id;
       }
 
       // Calcular valor total baseado nos campos corretos
@@ -298,7 +292,7 @@ const Index = () => {
         cliente_id: clienteId,
         veiculo_id: veiculo.id,
         vendedor_id: vendedorId,
-        instalador_id: instaladorId,
+        instalador_id: null, // Não mais atribuído no nível do pedido
         valor_total: valorTotal,
         status: 'pendente',
         responsavel_nome: orderData.cliente?.nome || 'N/A',
@@ -361,28 +355,27 @@ const Index = () => {
 
       console.log('✅ PDF salvo com sucesso:', urlData.signedUrl);
 
-      // Salvar os produtos do pedido
+      // Salvar os produtos do pedido com seus instaladores
       console.log('📦 Produtos a serem salvos:', orderData.produtos);
+      console.log('🔧 Produtos com instaladores:', orderData.produtosComInstaladores);
       
       if (orderData.produtos && orderData.produtos.length > 0) {
-        const produtosData = orderData.produtos.map((produto: any) => {
+        const produtosData = orderData.produtos.map((produto: any, index: number) => {
+          // Buscar dados do instalador para este produto
+          const produtoComInstalador = orderData.produtosComInstaladores?.find((p: any) => p.id === `produto-${index}`);
+          
           // Tratar os diferentes campos de valor que podem vir do PDF
           let valorUnitario = 0;
           
-          // Verificar se tem o campo 'unitario' (do PDF extraído)
           if (produto.unitario !== undefined) {
             valorUnitario = parseFloat(produto.unitario) || 0;
-          }
-          // Verificar se tem o campo 'valorUnitario' (da entrada manual)
-          else if (produto.valorUnitario) {
+          } else if (produto.valorUnitario) {
             if (typeof produto.valorUnitario === 'string') {
               valorUnitario = parseFloat(produto.valorUnitario.replace(/[^\d,]/g, '').replace(',', '.') || '0');
             } else {
               valorUnitario = parseFloat(produto.valorUnitario) || 0;
             }
-          }
-          // Verificar se tem o campo 'total' e 'quantidade' para calcular unitário
-          else if (produto.total && produto.quantidade) {
+          } else if (produto.total && produto.quantidade) {
             valorUnitario = parseFloat(produto.total) / (produto.quantidade || 1);
           }
           
@@ -391,31 +384,23 @@ const Index = () => {
           
           console.log(`📦 Produto: ${produto.descricao}`);
           console.log(`   - Qtd: ${quantidade}`);
-          console.log(`   - Unit original: ${produto.unitario || produto.valorUnitario || 'N/A'}`);
           console.log(`   - Unit calculado: ${valorUnitario}`);
           console.log(`   - Total: ${valorTotal}`);
+          console.log(`   - Instalador: ${produtoComInstalador?.instalador_nome || 'Nenhum'}`);
           
           return {
             pedido_id: pedido.id,
             descricao: produto.descricao || 'Produto',
             quantidade: quantidade,
             valor_unitario: valorUnitario,
-            valor_total: valorTotal
+            valor_total: valorTotal,
+            instalador_id: produtoComInstalador?.instalador_id || null
           };
         });
 
         console.log('📦 Dados formatados dos produtos:', produtosData);
 
-        const { error: produtosError } = await supabase
-          .from('produtos_pedido')
-          .insert(produtosData);
-
-        if (produtosError) {
-          console.error('❌ Erro ao salvar produtos:', produtosError);
-          throw produtosError;
-        }
-        
-        console.log('✅ Produtos salvos com sucesso!');
+        // Primeiro vamos criar uma nova migração para adicionar a coluna instalador_id na tabela produtos_pedido
       } else {
         console.log('⚠️ Nenhum produto encontrado para salvar');
       }
@@ -441,7 +426,9 @@ const Index = () => {
       case 1:
         return !!extractedData;
       case 2:
-        return vehicleData.marca && vehicleData.modelo && vehicleData.placa && vehicleData.instalador && vehicleData.vendedor;
+        return vehicleData.marca && vehicleData.modelo && vehicleData.placa && vehicleData.vendedor;
+      case 3:
+        return true; // Instaladores são opcionais por produto
       default:
         return true;
     }
@@ -546,21 +533,6 @@ const Index = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="instalador">Instalador</Label>
-                  <Select value={vehicleData.instalador} onValueChange={(value) => setVehicleData({...vehicleData, instalador: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o instalador" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {instaladores.map((instalador) => (
-                        <SelectItem key={instalador.id} value={instalador.nome}>
-                          {instalador.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="vendedor">Vendedor</Label>
                   <Select value={vehicleData.vendedor} onValueChange={(value) => setVehicleData({...vehicleData, vendedor: value})}>
                     <SelectTrigger>
@@ -581,6 +553,23 @@ const Index = () => {
         )}
 
         {currentStep === 3 && (
+          <Card>
+            <CardHeader className="px-4 sm:px-6 py-4 sm:py-6">
+              <CardTitle className="text-lg sm:text-xl">Instaladores por Produto</CardTitle>
+              <CardDescription className="text-sm">
+                Atribua instaladores específicos para cada produto
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="px-4 sm:px-6">
+              <ProductInstallerStep
+                products={extractedData?.produtos || []}
+                onProductInstallersChange={setProductsWithInstallers}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {currentStep === 4 && (
           <Card>
             <CardHeader className="px-4 sm:px-6 py-4 sm:py-6">
               <CardTitle className="text-lg sm:text-xl">Resumo e Geração do Pedido</CardTitle>
@@ -608,7 +597,6 @@ const Index = () => {
                   <p><strong>Veículo:</strong> {vehicleData.marca} {vehicleData.modelo} ({vehicleData.ano})</p>
                   <p><strong>Cor:</strong> {vehicleData.cor}</p>
                   <p><strong>Placa:</strong> {vehicleData.placa}</p>
-                  <p><strong>Instalador:</strong> {vehicleData.instalador}</p>
                   <p><strong>Vendedor:</strong> {vehicleData.vendedor}</p>
                 </div>
               </div>
