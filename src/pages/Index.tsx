@@ -493,7 +493,7 @@ const Index = () => {
                   <div className="space-y-1 sm:grid sm:grid-cols-2 sm:gap-2 sm:space-y-0 text-xs sm:text-sm">
                     <p><strong>Cliente:</strong> {extractedData?.cliente?.nome || 'N/A'}</p>
                     <p><strong>Pedido:</strong> #{extractedData?.pedido?.numero || 'N/A'}</p>
-                    <p><strong>Total:</strong> {extractedData?.totalPedido || 'N/A'}</p>
+                    <p><strong>Total:</strong> R$ {extractedData?.pedido?.valorTotal ? extractedData.pedido.valorTotal.toFixed(2) : 'N/A'}</p>
                     <p><strong>Data:</strong> {extractedData?.pedido?.data || 'N/A'}</p>
                   </div>
                 </div>
