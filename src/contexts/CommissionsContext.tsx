@@ -39,6 +39,7 @@ interface CommissionsContextType {
   selectedPeriod: DateRange | undefined;
   setSelectedPeriod: (date: DateRange | undefined) => void;
   refreshCommissions: () => Promise<void>;
+  getHistoricoComissoes: (funcionarioId: string, tipo: 'Vendedor' | 'Instalador') => Promise<{ month: string; comissao: number }[]>;
 }
 
 const CommissionsContext = createContext<CommissionsContextType | undefined>(undefined);
@@ -190,6 +191,75 @@ export const CommissionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
+  const getHistoricoComissoes = async (funcionarioId: string, tipo: 'Vendedor' | 'Instalador') => {
+    if (!user) return [];
+
+    try {
+      const currentDate = new Date();
+      const monthsData = [];
+
+      // Buscar dados dos últimos 6 meses
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+        const startDate = startOfMonth(date).toISOString();
+        const endDate = endOfMonth(date).toISOString();
+
+        const monthName = date.toLocaleDateString('pt-BR', { month: 'short' });
+
+        if (tipo === 'Vendedor') {
+          const { data } = await supabase
+            .from('pedidos')
+            .select('valor_total')
+            .eq('user_id', user.id)
+            .eq('vendedor_id', funcionarioId)
+            .gte('created_at', startDate)
+            .lte('created_at', endDate);
+
+          const vendedor = await supabase
+            .from('vendedores')
+            .select('comissao')
+            .eq('id', funcionarioId)
+            .single();
+
+          const valorTotal = data?.reduce((sum, pedido) => sum + (pedido.valor_total || 0), 0) || 0;
+          const comissao = valorTotal * ((vendedor.data?.comissao || 0) / 100);
+
+          monthsData.push({
+            month: monthName,
+            comissao: comissao
+          });
+        } else {
+          const { data } = await supabase
+            .from('pedidos')
+            .select('valor_total')
+            .eq('user_id', user.id)
+            .eq('instalador_id', funcionarioId)
+            .gte('created_at', startDate)
+            .lte('created_at', endDate);
+
+          const instalador = await supabase
+            .from('instaladores')
+            .select('comissao')
+            .eq('id', funcionarioId)
+            .single();
+
+          const valorTotal = data?.reduce((sum, pedido) => sum + (pedido.valor_total || 0), 0) || 0;
+          const comissao = valorTotal * ((instalador.data?.comissao || 0) / 100);
+
+          monthsData.push({
+            month: monthName,
+            comissao: comissao
+          });
+        }
+      }
+
+      return monthsData;
+    } catch (error) {
+      console.error('Erro ao buscar histórico de comissões:', error);
+      return [];
+    }
+  };
+
   useEffect(() => {
     if (user) {
       refreshCommissions();
@@ -204,7 +274,8 @@ export const CommissionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
       loading,
       selectedPeriod,
       setSelectedPeriod,
-      refreshCommissions
+      refreshCommissions,
+      getHistoricoComissoes
     }}>
       {children}
     </CommissionsContext.Provider>

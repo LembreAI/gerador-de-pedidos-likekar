@@ -33,6 +33,7 @@ export default function Commissions() {
   } = useAuth();
   const [selectedFuncionario, setSelectedFuncionario] = useState<FuncionarioComissao | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [chartData, setChartData] = useState<{ month: string; comissao: number }[]>([]);
   const {
     vendedoresComissoes,
     installadoresComissoes,
@@ -40,7 +41,8 @@ export default function Commissions() {
     loading,
     selectedPeriod,
     setSelectedPeriod,
-    refreshCommissions
+    refreshCommissions,
+    getHistoricoComissoes
   } = useCommissions();
   if (!user) {
     window.location.href = '/auth';
@@ -72,15 +74,14 @@ export default function Commissions() {
   // Filtrar funcionários baseado na pesquisa
   const filteredFuncionarios = funcionarios.filter(funcionario => funcionario.nome.toLowerCase().includes(searchTerm.toLowerCase()) || funcionario.email.toLowerCase().includes(searchTerm.toLowerCase()) || funcionario.tipo.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  // Gerar dados do gráfico para o funcionário selecionado (simulado por mês)
-  const generateChartData = (funcionario: FuncionarioComissao) => {
-    // Simulando dados mensais (em uma implementação real, você buscaria do backend)
-    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
-    return months.map(month => ({
-      mes: month,
-      comissao: Math.random() * funcionario.comissao_total * 0.3 + funcionario.comissao_total * 0.1,
-      trabalhos: Math.floor(Math.random() * funcionario.total_trabalhos * 0.4) + 1
-    }));
+  const setSelectedFuncionarioHandler = async (funcionario: FuncionarioComissao | null) => {
+    setSelectedFuncionario(funcionario);
+    if (funcionario) {
+      const data = await getHistoricoComissoes(funcionario.id, funcionario.tipo);
+      setChartData(data);
+    } else {
+      setChartData([]);
+    }
   };
   return <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
       {/* Header */}
@@ -149,7 +150,7 @@ export default function Commissions() {
             </div> : filteredFuncionarios.length === 0 ? <div className="text-center py-8 text-muted-foreground">
               {searchTerm ? 'Nenhum funcionário encontrado para a pesquisa' : 'Nenhuma comissão encontrada para este período'}
             </div> : <div className="space-y-2">
-              {filteredFuncionarios.map(funcionario => <div key={`${funcionario.tipo}-${funcionario.id}`} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 border rounded-lg hover:bg-accent/50 cursor-pointer transition-colors" onClick={() => setSelectedFuncionario(funcionario)}>
+              {filteredFuncionarios.map(funcionario => <div key={`${funcionario.tipo}-${funcionario.id}`} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 border rounded-lg hover:bg-accent/50 cursor-pointer transition-colors" onClick={() => setSelectedFuncionarioHandler(funcionario)}>
                   <div className="flex items-center gap-3 flex-1">
                     <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0">
                       <AvatarFallback className="text-xs sm:text-sm font-semibold">
@@ -193,7 +194,7 @@ export default function Commissions() {
       </Card>
 
       {/* Dialog com Gráfico Detalhado */}
-      <Dialog open={!!selectedFuncionario} onOpenChange={() => setSelectedFuncionario(null)}>
+      <Dialog open={!!selectedFuncionario} onOpenChange={() => setSelectedFuncionarioHandler(null)}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
@@ -271,14 +272,14 @@ export default function Commissions() {
                 <CardHeader>
                   <CardTitle>Evolução das Comissões</CardTitle>
                   <CardDescription>
-                    Histórico mensal de comissões (dados simulados)
+                    Histórico mensal de comissões (últimos 6 meses)
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={generateChartData(selectedFuncionario)}>
+                    <LineChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="mes" />
+                      <XAxis dataKey="month" />
                       <YAxis tickFormatter={value => `R$ ${value.toLocaleString()}`} />
                       <Tooltip formatter={(value: number) => [formatCurrency(value), 'Comissão']} labelFormatter={label => `Mês: ${label}`} />
                       <Line type="monotone" dataKey="comissao" stroke="hsl(var(--primary))" strokeWidth={2} dot={{
