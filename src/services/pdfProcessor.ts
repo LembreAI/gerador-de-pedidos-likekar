@@ -89,8 +89,15 @@ async function extractWithAI(file: File): Promise<ExtractedData> {
       throw new Error(error.message || 'Falha na extração via IA');
     }
 
-    const extractedData = data;
+    // A Edge Function retorna { extractedData: { ... } }, extrair os dados corretos
+    const extractedData = data?.extractedData || data;
     console.log('✅ Dados extraídos via IA:', extractedData);
+
+    // Validar estrutura dos dados extraídos
+    if (!extractedData || typeof extractedData !== 'object') {
+      console.error('❌ Dados inválidos retornados pela IA:', data);
+      throw new Error('Estrutura de dados inválida retornada pela IA');
+    }
 
     return extractedData;
 
