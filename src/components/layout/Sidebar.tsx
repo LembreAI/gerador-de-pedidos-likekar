@@ -56,12 +56,6 @@ const menuItems = [
     path: "/comissoes",
   },
   {
-    id: "comissoes-produtos",
-    label: "Comissões por Produto",
-    icon: Package,
-    path: "/comissoes-produtos",
-  },
-  {
     id: "configuracoes",
     label: "Configurações",
     icon: Settings,

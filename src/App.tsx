@@ -16,7 +16,6 @@ import Clients from "./pages/Clients";
 import Vendors from "./pages/Vendors";
 import Installers from "./pages/Installers";
 import Commissions from "./pages/Commissions";
-import InstallerCommissions from "./pages/InstallerCommissions";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -49,7 +48,6 @@ const App = () => (
                    <Route path="/vendedores" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
                    <Route path="/instaladores" element={<ProtectedRoute><Installers /></ProtectedRoute>} />
                    <Route path="/comissoes" element={<ProtectedRoute><Commissions /></ProtectedRoute>} />
-                   <Route path="/comissoes-produtos" element={<ProtectedRoute><InstallerCommissions /></ProtectedRoute>} />
                    <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />

@@ -400,7 +400,17 @@ const Index = () => {
 
         console.log('📦 Dados formatados dos produtos:', produtosData);
 
-        // Primeiro vamos criar uma nova migração para adicionar a coluna instalador_id na tabela produtos_pedido
+        // Primeiro salvar os produtos
+        const { error: produtosError } = await supabase
+          .from('produtos_pedido')
+          .insert(produtosData);
+
+        if (produtosError) {
+          console.error('❌ Erro ao salvar produtos:', produtosError);
+          throw produtosError;
+        }
+        
+        console.log('✅ Produtos salvos com sucesso!');
       } else {
         console.log('⚠️ Nenhum produto encontrado para salvar');
       }

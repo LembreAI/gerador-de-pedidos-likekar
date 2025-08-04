@@ -90,7 +90,6 @@ export default function Orders() {
         };
         
         orderData.responsaveis = {
-          instalador: orderDetails.instalador?.nome || orderData.responsaveis.instalador,
           vendedor: orderDetails.vendedor?.nome || orderData.responsaveis.vendedor
         };
       } else {
@@ -132,7 +131,6 @@ export default function Orders() {
             placa: orderDetails.veiculo?.placa || ''
           },
           responsaveis: {
-            instalador: orderDetails.instalador?.nome || 'Não definido',
             vendedor: orderDetails.vendedor?.nome || 'Não definido'
           },
           observacoes: orderDetails.observacoes || ''

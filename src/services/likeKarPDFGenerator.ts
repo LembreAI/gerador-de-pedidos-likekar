@@ -30,7 +30,6 @@ export interface PedidoData {
     placa?: string;
   };
   responsaveis: {
-    instalador: string;
     vendedor: string;
   };
   produtos: Array<{
@@ -42,6 +41,7 @@ export interface PedidoData {
     total: number;
   }>;
   observacoes?: string;
+  produtosComInstaladores?: any[];
 }
 
 export class LikeKarPDFGenerator {
@@ -278,7 +278,6 @@ export class LikeKarPDFGenerator {
     const infos = [
       ['Veículo do Cliente', `${data.veiculo.marca} ${data.veiculo.modelo}${data.veiculo.cor ? ` | Cor: ${data.veiculo.cor}` : ''}${data.veiculo.ano ? ` | Ano: ${data.veiculo.ano}` : ''}`],
       ['Placa', data.veiculo.placa || ''],
-      ['Instalador', data.responsaveis.instalador],
       ['Vendedor', data.responsaveis.vendedor],
     ];
 

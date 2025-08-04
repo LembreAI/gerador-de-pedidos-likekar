@@ -237,6 +237,7 @@ export type Database = {
           created_at: string
           descricao: string
           id: string
+          instalador_id: string | null
           pedido_id: string
           quantidade: number | null
           valor_total: number | null
@@ -246,6 +247,7 @@ export type Database = {
           created_at?: string
           descricao: string
           id?: string
+          instalador_id?: string | null
           pedido_id: string
           quantidade?: number | null
           valor_total?: number | null
@@ -255,12 +257,20 @@ export type Database = {
           created_at?: string
           descricao?: string
           id?: string
+          instalador_id?: string | null
           pedido_id?: string
           quantidade?: number | null
           valor_total?: number | null
           valor_unitario?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "produtos_pedido_instalador_id_fkey"
+            columns: ["instalador_id"]
+            isOneToOne: false
+            referencedRelation: "instaladores"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "produtos_pedido_pedido_id_fkey"
             columns: ["pedido_id"]
