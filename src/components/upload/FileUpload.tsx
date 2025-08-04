@@ -48,7 +48,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
       toast({
         title: "Dados extraídos com sucesso!",
-        description: `Extraídos: ${extractedData.produtos.length} produtos, cliente: ${extractedData.cliente.nome || 'Não encontrado'}`,
+        description: `Extraídos: ${extractedData?.produtos?.length || 0} produtos, cliente: ${extractedData?.cliente?.nome || 'Não encontrado'}`,
       });
 
     } catch (error) {
@@ -147,12 +147,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({
               <div className="p-4 bg-secondary rounded-lg">
                 <h3 className="font-medium text-primary mb-2">Dados Extraídos:</h3>
                 <div className="space-y-1 text-sm">
-                  <p><strong>Cliente:</strong> {extractedData.cliente.nome || 'Não encontrado'}</p>
-                  <p><strong>CPF/CNPJ:</strong> {extractedData.cliente.cpfCnpj || 'Não encontrado'}</p>
-                  <p><strong>Pedido:</strong> #{extractedData.pedido.numero || 'Não encontrado'}</p>
-                  <p><strong>Data:</strong> {extractedData.pedido.data || 'Não encontrada'}</p>
-                  <p><strong>Produtos:</strong> {extractedData.produtos.length} itens</p>
-                  {extractedData.produtos.length > 0 && (
+                  <p><strong>Cliente:</strong> {extractedData?.cliente?.nome || 'Não encontrado'}</p>
+                  <p><strong>CPF/CNPJ:</strong> {extractedData?.cliente?.cpfCnpj || 'Não encontrado'}</p>
+                  <p><strong>Pedido:</strong> #{extractedData?.pedido?.numero || 'Não encontrado'}</p>
+                  <p><strong>Data:</strong> {extractedData?.pedido?.data || 'Não encontrada'}</p>
+                  <p><strong>Produtos:</strong> {extractedData?.produtos?.length || 0} itens</p>
+                  {extractedData?.produtos?.length > 0 && (
                     <p><strong>Total dos produtos:</strong> R$ {extractedData.produtos.reduce((sum, p) => sum + p.total, 0).toFixed(2)}</p>
                   )}
                 </div>
