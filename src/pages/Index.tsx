@@ -261,19 +261,33 @@ const Index = () => {
       // Verificar se já existe um pedido com este número
       const numeroOriginal = orderData.pedido.numero;
       console.log(`📝 Verificando se pedido ${numeroOriginal} já existe...`);
+      console.log(`📊 User ID atual:`, (await supabase.auth.getUser()).data.user?.id);
       
-      const { data: existingOrder } = await supabase
+      // Buscar todos os pedidos do usuário para debug
+      const { data: allUserOrders, error: debugError } = await supabase
         .from('pedidos')
-        .select('id')
+        .select('id, responsavel_nome')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+      
+      console.log(`📋 Pedidos existentes do usuário:`, allUserOrders);
+      console.log(`❌ Erro na busca de debug:`, debugError);
+      
+      const { data: existingOrder, error: checkError } = await supabase
+        .from('pedidos')
+        .select('id, user_id, responsavel_nome, created_at')
         .eq('id', numeroOriginal)
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
         .maybeSingle();
 
+      console.log(`🔍 Resultado da verificação:`, existingOrder);
+      console.log(`❌ Erro na verificação:`, checkError);
+
       if (existingOrder) {
-        console.log(`⚠️ Pedido ${numeroOriginal} já existe. Cancelando criação para evitar duplicatas.`);
+        console.log(`⚠️ Pedido ${numeroOriginal} já existe! Dados encontrados:`, existingOrder);
         
         toast({
           title: "Pedido já existe",
-          description: `O pedido ${numeroOriginal} já foi salvo anteriormente.`,
+          description: `O pedido ${numeroOriginal} já foi salvo anteriormente em ${new Date(existingOrder.created_at).toLocaleString()}.`,
           variant: "destructive"
         });
         
@@ -282,6 +296,8 @@ const Index = () => {
         }
         return;
       }
+
+      console.log(`✅ Pedido ${numeroOriginal} não existe, pode criar.`);
 
       console.log(`✅ Número ${numeroOriginal} está disponível, criando pedido...`);
 
