@@ -71,7 +71,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
               variant="outline" 
               size="sm"
               onClick={() => navigate('/pedidos')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 text-black bg-white hover:bg-gray-100"
             >
               <Eye className="h-4 w-4" />
               Ver Pedidos
