@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, FileText, X } from 'lucide-react';
+import { Upload, FileText, X, Eye } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { extractDataFromPDF } from '@/services/pdfProcessor';
+import { useNavigate } from 'react-router-dom';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -28,6 +29,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedData, setExtractedData] = useState<any>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const processFile = async (file: File) => {
     setIsProcessing(true);
@@ -60,9 +62,21 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       if (errorMessage.startsWith('PEDIDO_DUPLICADO:')) {
         const message = errorMessage.replace('PEDIDO_DUPLICADO:', '');
         toast({
-          title: "Pedido já existe",
-          description: message,
-          variant: "destructive"
+          title: "⚠️ Pedido Duplicado Encontrado",
+          description: `${message}\n\nVerifique a lista de pedidos para visualizar o registro existente.`,
+          variant: "destructive",
+          duration: 8000,
+          action: (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/pedidos')}
+              className="flex items-center gap-2"
+            >
+              <Eye className="h-4 w-4" />
+              Ver Pedidos
+            </Button>
+          )
         });
       } else {
         toast({

@@ -367,7 +367,15 @@ export default function Orders() {
                       <TableCell className="w-12">
                         <input type="checkbox" className="w-4 h-4 rounded border border-input bg-background" />
                       </TableCell>
-                      <TableCell className="font-medium text-foreground">{order.id}</TableCell>
+                       <TableCell className="font-medium text-foreground">
+                         <div className="flex items-center gap-2">
+                           <span>{order.id}</span>
+                           {/* Destacar pedidos criados recentemente */}
+                           {new Date(order.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000) && (
+                             <Badge variant="secondary" className="text-xs">Novo</Badge>
+                           )}
+                         </div>
+                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {new Date(order.created_at).toLocaleDateString('pt-BR')}
                       </TableCell>
