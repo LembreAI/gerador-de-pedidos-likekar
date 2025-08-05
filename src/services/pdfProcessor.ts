@@ -131,6 +131,13 @@ async function extractWithAI(file: File): Promise<ExtractedData> {
 
   } catch (error) {
     console.error('❌ Erro na extração via IA:', error);
+    
+    // Se for erro de pedido duplicado, relançar sem fallback
+    if (error instanceof Error && error.message.includes('PEDIDO_DUPLICADO')) {
+      console.log('⚠️ Erro de pedido duplicado detectado - não fazendo fallback');
+      throw error;
+    }
+    
     console.log('🔄 Tentando fallback com regex...');
     return await extractWithRegex(file);
   }
