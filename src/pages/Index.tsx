@@ -141,7 +141,7 @@ const Index = () => {
 
   const saveOrderToSupabase = async (orderData: any, pdfBlob: Blob, goToOrders: boolean) => {
     try {
-      // Primeiro, salvar ou buscar o cliente
+      // Primeiro, salvar ou buscar o cliente IDENTIFICANDO POR TELEFONE
       const clienteData = {
         nome: orderData.cliente?.nome || 'N/A',
         telefone: orderData.cliente?.telefone || '',
@@ -154,77 +154,194 @@ const Index = () => {
         user_id: (await supabase.auth.getUser()).data.user?.id
       };
 
-      const { data: existingCliente } = await supabase
-        .from('clientes')
-        .select('id')
-        .eq('nome', clienteData.nome)
-        .eq('user_id', clienteData.user_id)
-        .maybeSingle();
+      console.log('🔍 Verificando cliente por telefone:', clienteData.telefone);
 
       let clienteId;
-      if (existingCliente) {
-        clienteId = existingCliente.id;
-      } else {
-        const { data: newCliente, error: clienteError } = await supabase
+      
+      // IDENTIFICAR CLIENTE POR TELEFONE para evitar duplicação
+      if (clienteData.telefone && clienteData.telefone.trim() !== '') {
+        const { data: existingCliente } = await supabase
           .from('clientes')
-          .insert(clienteData)
-          .select('id')
-          .single();
+          .select('id, nome, telefone, email, endereco, cidade, estado, cep, cpf_cnpj')
+          .eq('telefone', clienteData.telefone)
+          .eq('user_id', clienteData.user_id)
+          .maybeSingle();
 
-        if (clienteError) throw clienteError;
-        clienteId = newCliente.id;
+        if (existingCliente) {
+          console.log(`✅ Cliente encontrado por telefone: ${existingCliente.nome} (ID: ${existingCliente.id})`);
+          clienteId = existingCliente.id;
+          
+          // Atualizar dados do cliente se necessário (manter dados mais recentes)
+          const { error: updateError } = await supabase
+            .from('clientes')
+            .update({
+              nome: clienteData.nome,
+              email: clienteData.email || existingCliente.email,
+              endereco: clienteData.endereco || existingCliente.endereco,
+              cidade: clienteData.cidade || existingCliente.cidade,
+              estado: clienteData.estado || existingCliente.estado,
+              cep: clienteData.cep || existingCliente.cep,
+              cpf_cnpj: clienteData.cpf_cnpj || existingCliente.cpf_cnpj
+            })
+            .eq('id', clienteId);
+            
+          if (updateError) {
+            console.warn('⚠️ Erro ao atualizar dados do cliente:', updateError);
+          } else {
+            console.log('📝 Dados do cliente atualizados');
+          }
+        } else {
+          console.log('👤 Cliente não encontrado, criando novo...');
+          const { data: newCliente, error: clienteError } = await supabase
+            .from('clientes')
+            .insert(clienteData)
+            .select('id')
+            .single();
+
+          if (clienteError) throw clienteError;
+          clienteId = newCliente.id;
+          console.log(`✅ Novo cliente criado: ${clienteData.nome} (ID: ${clienteId})`);
+        }
+      } else {
+        // Se não tem telefone, usar o método antigo por nome
+        console.log('⚠️ Cliente sem telefone, verificando por nome...');
+        const { data: existingCliente } = await supabase
+          .from('clientes')
+          .select('id')
+          .eq('nome', clienteData.nome)
+          .eq('user_id', clienteData.user_id)
+          .maybeSingle();
+
+        if (existingCliente) {
+          clienteId = existingCliente.id;
+        } else {
+          const { data: newCliente, error: clienteError } = await supabase
+            .from('clientes')
+            .insert(clienteData)
+            .select('id')
+            .single();
+
+          if (clienteError) throw clienteError;
+          clienteId = newCliente.id;
+        }
       }
 
-      // Buscar ou criar o veículo (verificar se já existe para este cliente)
-      const { data: existingVeiculo } = await supabase
-        .from('veiculos')
-        .select('id')
-        .eq('cliente_id', clienteId)
-        .maybeSingle();
-
+      // Buscar ou criar o veículo IDENTIFICANDO POR PLACA para evitar duplicação
+      console.log('🚗 Verificando veículo por placa:', orderData.veiculo.placa);
+      
       let veiculo;
-      if (existingVeiculo) {
-        // Atualizar veículo existente
-        const veiculoData = {
-          marca: orderData.veiculo.marca,
-          modelo: orderData.veiculo.modelo,
-          ano: parseInt(orderData.veiculo.ano),
-          placa: orderData.veiculo.placa || '',
-          cor: orderData.veiculo.cor || '',
-          chassi: '',
-          combustivel: ''
-        };
-
-        const { data: updatedVeiculo, error: veiculoError } = await supabase
+      
+      // IDENTIFICAR VEÍCULO POR PLACA para o cliente específico
+      if (orderData.veiculo.placa && orderData.veiculo.placa.trim() !== '') {
+        const { data: existingVeiculo } = await supabase
           .from('veiculos')
-          .update(veiculoData)
-          .eq('id', existingVeiculo.id)
-          .select('id')
-          .single();
+          .select('id, marca, modelo, placa, ano, cor')
+          .eq('cliente_id', clienteId)
+          .eq('placa', orderData.veiculo.placa)
+          .maybeSingle();
 
-        if (veiculoError) throw veiculoError;
-        veiculo = updatedVeiculo;
+        if (existingVeiculo) {
+          console.log(`✅ Veículo encontrado por placa: ${existingVeiculo.marca} ${existingVeiculo.modelo} - ${existingVeiculo.placa} (ID: ${existingVeiculo.id})`);
+          
+          // Atualizar dados do veículo se necessário (manter dados mais recentes)
+          const { data: updatedVeiculo, error: veiculoError } = await supabase
+            .from('veiculos')
+            .update({
+              marca: orderData.veiculo.marca,
+              modelo: orderData.veiculo.modelo,
+              ano: parseInt(orderData.veiculo.ano) || existingVeiculo.ano,
+              cor: orderData.veiculo.cor || existingVeiculo.cor,
+              chassi: '',
+              combustivel: ''
+            })
+            .eq('id', existingVeiculo.id)
+            .select('id')
+            .single();
+
+          if (veiculoError) {
+            console.warn('⚠️ Erro ao atualizar dados do veículo:', veiculoError);
+            veiculo = { id: existingVeiculo.id };
+          } else {
+            veiculo = updatedVeiculo;
+            console.log('📝 Dados do veículo atualizados');
+          }
+        } else {
+          console.log('🚗 Veículo com esta placa não encontrado para este cliente, criando novo...');
+          
+          // Criar novo veículo para este cliente
+          const veiculoData = {
+            marca: orderData.veiculo.marca,
+            modelo: orderData.veiculo.modelo,
+            ano: parseInt(orderData.veiculo.ano),
+            placa: orderData.veiculo.placa || '',
+            cor: orderData.veiculo.cor || '',
+            chassi: '',
+            combustivel: '',
+            cliente_id: clienteId
+          };
+
+          const { data: newVeiculo, error: veiculoError } = await supabase
+            .from('veiculos')
+            .insert(veiculoData)
+            .select('id')
+            .single();
+
+          if (veiculoError) throw veiculoError;
+          veiculo = newVeiculo;
+          console.log(`✅ Novo veículo criado: ${veiculoData.marca} ${veiculoData.modelo} - ${veiculoData.placa} (ID: ${veiculo.id})`);
+        }
       } else {
-        // Criar novo veículo
-        const veiculoData = {
-          marca: orderData.veiculo.marca,
-          modelo: orderData.veiculo.modelo,
-          ano: parseInt(orderData.veiculo.ano),
-          placa: orderData.veiculo.placa || '',
-          cor: orderData.veiculo.cor || '',
-          chassi: '',
-          combustivel: '',
-          cliente_id: clienteId
-        };
-
-        const { data: newVeiculo, error: veiculoError } = await supabase
+        // Se não tem placa, usar o método antigo (buscar o primeiro veículo do cliente)
+        console.log('⚠️ Veículo sem placa, verificando primeiro veículo do cliente...');
+        const { data: existingVeiculo } = await supabase
           .from('veiculos')
-          .insert(veiculoData)
           .select('id')
-          .single();
+          .eq('cliente_id', clienteId)
+          .maybeSingle();
 
-        if (veiculoError) throw veiculoError;
-        veiculo = newVeiculo;
+        if (existingVeiculo) {
+          // Atualizar veículo existente
+          const veiculoData = {
+            marca: orderData.veiculo.marca,
+            modelo: orderData.veiculo.modelo,
+            ano: parseInt(orderData.veiculo.ano),
+            placa: orderData.veiculo.placa || '',
+            cor: orderData.veiculo.cor || '',
+            chassi: '',
+            combustivel: ''
+          };
+
+          const { data: updatedVeiculo, error: veiculoError } = await supabase
+            .from('veiculos')
+            .update(veiculoData)
+            .eq('id', existingVeiculo.id)
+            .select('id')
+            .single();
+
+          if (veiculoError) throw veiculoError;
+          veiculo = updatedVeiculo;
+        } else {
+          // Criar novo veículo
+          const veiculoData = {
+            marca: orderData.veiculo.marca,
+            modelo: orderData.veiculo.modelo,
+            ano: parseInt(orderData.veiculo.ano),
+            placa: orderData.veiculo.placa || '',
+            cor: orderData.veiculo.cor || '',
+            chassi: '',
+            combustivel: '',
+            cliente_id: clienteId
+          };
+
+          const { data: newVeiculo, error: veiculoError } = await supabase
+            .from('veiculos')
+            .insert(veiculoData)
+            .select('id')
+            .single();
+
+          if (veiculoError) throw veiculoError;
+          veiculo = newVeiculo;
+        }
       }
 
       // Buscar IDs dos vendedor
