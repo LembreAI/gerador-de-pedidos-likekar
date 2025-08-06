@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      checklist_veiculo: {
+        Row: {
+          created_at: string
+          id: string
+          possui_insulfilm: boolean | null
+          possui_multimidia: boolean | null
+          updated_at: string
+          veiculo_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          possui_insulfilm?: boolean | null
+          possui_multimidia?: boolean | null
+          updated_at?: string
+          veiculo_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          possui_insulfilm?: boolean | null
+          possui_multimidia?: boolean | null
+          updated_at?: string
+          veiculo_id?: string
+        }
+        Relationships: []
+      }
       clientes: {
         Row: {
           cep: string | null

@@ -5,13 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, Trash2, Printer, Filter, Eye, Download } from "lucide-react";
+import { Search, Trash2, Printer, Filter, Eye, Download, ClipboardList } from "lucide-react";
 import { useOrders } from "@/contexts/OrdersContext";
 import { useToast } from "@/hooks/use-toast";
 import { generateLikeKarPDF, PedidoData } from "@/services/likeKarPDFGenerator";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { ChecklistModal } from "@/components/checklist/ChecklistModal";
 const getStatusColor = (status: string) => {
   switch (status) {
     case "Concluído":
@@ -40,6 +41,9 @@ export default function Orders() {
   const [localLoading, setLocalLoading] = useState(loading);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [checklistModalOpen, setChecklistModalOpen] = useState(false);
+  const [selectedVeiculoId, setSelectedVeiculoId] = useState<string>("");
+  const [checklistCompleted, setChecklistCompleted] = useState<Record<string, boolean>>({});
 
   // Sincronizar estado de loading local
   useEffect(() => {
@@ -53,6 +57,57 @@ export default function Orders() {
       reloadOrders();
     }
   }, []); // Array vazio para executar apenas uma vez
+
+  // Carregar status dos checklists
+  useEffect(() => {
+    loadChecklistStatus();
+  }, [orders]);
+
+  const loadChecklistStatus = async () => {
+    if (orders.length === 0) return;
+
+    const veiculoIds = orders.map(order => order.veiculo_id).filter(Boolean);
+    if (veiculoIds.length === 0) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('checklist_veiculo')
+        .select('veiculo_id')
+        .in('veiculo_id', veiculoIds);
+
+      if (error) throw error;
+
+      const completedChecklists: Record<string, boolean> = {};
+      data?.forEach(item => {
+        completedChecklists[item.veiculo_id] = true;
+      });
+
+      setChecklistCompleted(completedChecklists);
+    } catch (error) {
+      console.error('Erro ao carregar status dos checklists:', error);
+    }
+  };
+
+  const handleOpenChecklist = (veiculoId: string) => {
+    if (!veiculoId) {
+      toast({
+        title: "Erro",
+        description: "Veículo não encontrado para este pedido.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setSelectedVeiculoId(veiculoId);
+    setChecklistModalOpen(true);
+  };
+
+  const handleChecklistSaved = () => {
+    loadChecklistStatus();
+    toast({
+      title: "Sucesso",
+      description: "Checklist salvo com sucesso!"
+    });
+  };
 
   console.log('📊 Orders.tsx: Estado atual dos pedidos:', { orders, loading, localLoading, ordersLength: orders.length });
   const filteredOrders = orders.filter(order => 
@@ -395,6 +450,16 @@ export default function Orders() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
+
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className={`h-8 w-8 p-0 ${checklistCompleted[order.veiculo_id] ? 'text-yellow-600' : 'text-black'}`}
+                            title={checklistCompleted[order.veiculo_id] ? "Checklist preenchido" : "Preencher checklist"}
+                            onClick={() => handleOpenChecklist(order.veiculo_id)}
+                          >
+                            <ClipboardList className="h-4 w-4" />
+                          </Button>
                           
                           {order.pdf_gerado_url ? (
                             <Button 
@@ -637,5 +702,13 @@ export default function Orders() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal do Checklist */}
+      <ChecklistModal
+        open={checklistModalOpen}
+        onOpenChange={setChecklistModalOpen}
+        veiculoId={selectedVeiculoId}
+        onSave={handleChecklistSaved}
+      />
     </div>;
 }
