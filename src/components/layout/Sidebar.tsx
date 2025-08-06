@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   PlusCircle,
   FileText,
@@ -16,50 +17,58 @@ import {
   LogOut,
   DollarSign,
   Package,
+  Shield,
 } from "lucide-react";
 
-const menuItems = [
+const allMenuItems = [
   {
     id: "novo-pedido",
     label: "Novo Pedido",
     icon: PlusCircle,
     path: "/",
+    requiredRole: null, // Available to all
   },
   {
     id: "pedidos",
     label: "Pedidos",
     icon: FileText,
     path: "/pedidos",
+    requiredRole: null, // Available to all
   },
   {
     id: "clientes",
     label: "Clientes",
     icon: Users,
     path: "/clientes",
+    requiredRole: null, // Available to all
   },
   {
     id: "vendedores",
     label: "Vendedores",
     icon: Users,
     path: "/vendedores",
+    requiredRole: "admin", // Admin only
   },
   {
     id: "instaladores",
     label: "Instaladores",
     icon: Wrench,
     path: "/instaladores",
+    requiredRole: "admin", // Admin only
   },
   {
     id: "comissoes",
     label: "Comissões",
     icon: DollarSign,
     path: "/comissoes",
+    requiredRole: "admin", // Admin only
   },
   {
-    id: "configuracoes",
-    label: "Configurações",
-    icon: Settings,
-    path: "/configuracoes",
+    id: "usuarios",
+    label: "Central de Usuários",
+    icon: Shield,
+    path: "/usuarios",
+    requiredRole: "admin", // Admin only
   },
 ];
 
@@ -72,6 +81,14 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAdmin, userRole, signOut } = useAuth();
+
+  // Filter menu items based on user role
+  const menuItems = allMenuItems.filter(item => {
+    if (item.requiredRole === null) return true; // Available to all
+    if (item.requiredRole === "admin") return isAdmin;
+    return true;
+  });
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -246,10 +263,10 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
               {!isCollapsed && (
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground truncate">
-                    João Silva
+                    Usuário
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
-                    Vendedor
+                    {userRole === 'admin' ? 'Administrador' : 'Vendedor'}
                   </p>
                 </div>
               )}
@@ -257,8 +274,8 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
               {/* Tooltip for collapsed state */}
               {isCollapsed && (
                 <div className="absolute left-full ml-2 px-3 py-2 bg-popover text-popover-foreground text-sm rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 hidden lg:block">
-                  <p className="font-semibold">João Silva</p>
-                  <p className="text-xs text-muted-foreground">Vendedor</p>
+                  <p className="font-semibold">Usuário</p>
+                  <p className="text-xs text-muted-foreground">{userRole === 'admin' ? 'Administrador' : 'Vendedor'}</p>
                 </div>
               )}
             </div>
@@ -268,6 +285,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                 variant="ghost"
                 size="sm"
                 className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+                onClick={signOut}
               >
                 <LogOut className="h-4 w-4" />
                 <span className="text-sm">Sair</span>

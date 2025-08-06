@@ -3,9 +3,13 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+type UserRole = 'admin' | 'vendedor';
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  userRole: UserRole | null;
+  isAdmin: boolean;
   loading: boolean;
   signUp: (email: string, password: string, userData?: any) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
@@ -17,8 +21,27 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  // Function to fetch user role
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase.rpc('get_user_role', { 
+        _user_id: userId 
+      });
+      
+      if (!error && data) {
+        setUserRole(data as UserRole);
+      } else {
+        setUserRole('vendedor'); // Default role
+      }
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+      setUserRole('vendedor');
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener
@@ -26,6 +49,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Defer role fetching to prevent deadlocks
+          setTimeout(() => {
+            fetchUserRole(session.user.id);
+          }, 0);
+        } else {
+          setUserRole(null);
+        }
+        
         setLoading(false);
       }
     );
@@ -34,6 +67,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchUserRole(session.user.id);
+      }
+      
       setLoading(false);
     });
 
@@ -128,6 +166,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider value={{
       user,
       session,
+      userRole,
+      isAdmin: userRole === 'admin',
       loading,
       signUp,
       signIn,
