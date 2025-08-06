@@ -12,7 +12,6 @@ import { generateLikeKarPDF, PedidoData } from "@/services/likeKarPDFGenerator";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-
 const getStatusColor = (status: string) => {
   switch (status) {
     case "Concluído":
@@ -54,7 +53,6 @@ export default function Orders() {
       reloadOrders();
     }
   }, []); // Array vazio para executar apenas uma vez
-
 
   console.log('📊 Orders.tsx: Estado atual dos pedidos:', { orders, loading, localLoading, ordersLength: orders.length });
   const filteredOrders = orders.filter(order => 
@@ -370,8 +368,14 @@ export default function Orders() {
                         <input type="checkbox" className="w-4 h-4 rounded border border-input bg-background" />
                       </TableCell>
                        <TableCell className="font-medium text-foreground">
-                          {order.id}
-                        </TableCell>
+                         <div className="flex items-center gap-2">
+                           <span>{order.id}</span>
+                           {/* Destacar pedidos criados recentemente */}
+                           {new Date(order.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000) && (
+                             <Badge variant="secondary" className="text-xs">Novo</Badge>
+                           )}
+                         </div>
+                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {new Date(order.created_at).toLocaleDateString('pt-BR')}
                       </TableCell>
@@ -391,7 +395,7 @@ export default function Orders() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-
+                          
                           {order.pdf_gerado_url ? (
                             <Button 
                               variant="ghost" 
@@ -633,6 +637,5 @@ export default function Orders() {
           )}
         </DialogContent>
       </Dialog>
-
     </div>;
 }

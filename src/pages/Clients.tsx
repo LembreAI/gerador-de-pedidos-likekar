@@ -3,14 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Eye, Edit, Trash2, Plus, Phone, Car, MapPin, Mail, ClipboardList } from "lucide-react";
+import { Search, Eye, Edit, Trash2, Plus, Phone, Car, MapPin, Mail } from "lucide-react";
 import { useClientes } from "@/contexts/ClientesContext";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { VehicleSelectionModal } from "@/components/checklist/VehicleSelectionModal";
-import { ChecklistModal } from "@/components/checklist/ChecklistModal";
-import { supabase } from "@/integrations/supabase/client";
 
 export default function Clients() {
   const {
@@ -25,12 +22,6 @@ export default function Clients() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [localLoading, setLocalLoading] = useState(loading);
-  const [vehicleSelectionOpen, setVehicleSelectionOpen] = useState(false);
-  const [checklistModalOpen, setChecklistModalOpen] = useState(false);
-  const [selectedClienteId, setSelectedClienteId] = useState<string>("");
-  const [selectedClienteNome, setSelectedClienteNome] = useState<string>("");
-  const [selectedVeiculoId, setSelectedVeiculoId] = useState<string>("");
-  const [checklistCompleted, setChecklistCompleted] = useState<Record<string, boolean>>({});
 
   // Sincronizar estado de loading local
   useEffect(() => {
@@ -44,67 +35,6 @@ export default function Clients() {
       reloadClientes();
     }
   }, []);
-
-  // Carregar status dos checklists
-  useEffect(() => {
-    loadChecklistStatus();
-  }, [clientes]);
-
-  const loadChecklistStatus = async () => {
-    if (clientes.length === 0) return;
-
-    // Pegar todos os veículos dos clientes
-    const allVeiculoIds: string[] = [];
-    clientes.forEach(cliente => {
-      if (cliente.veiculo?.id) {
-        allVeiculoIds.push(cliente.veiculo.id);
-      }
-    });
-
-    if (allVeiculoIds.length === 0) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('checklist_veiculo')
-        .select('veiculo_id')
-        .in('veiculo_id', allVeiculoIds);
-
-      if (error) throw error;
-
-      const completedChecklists: Record<string, boolean> = {};
-      data?.forEach(item => {
-        completedChecklists[item.veiculo_id] = true;
-      });
-
-      setChecklistCompleted(completedChecklists);
-    } catch (error) {
-      console.error('Erro ao carregar status dos checklists:', error);
-    }
-  };
-
-  const handleOpenChecklist = (clienteId: string, clienteNome: string) => {
-    setSelectedClienteId(clienteId);
-    setSelectedClienteNome(clienteNome);
-    setVehicleSelectionOpen(true);
-  };
-
-  const handleVehicleSelected = (veiculoId: string) => {
-    setSelectedVeiculoId(veiculoId);
-    setChecklistModalOpen(true);
-  };
-
-  const handleChecklistSaved = () => {
-    loadChecklistStatus();
-    toast({
-      title: "Sucesso",
-      description: "Checklist salvo com sucesso!"
-    });
-  };
-
-  const hasChecklistCompleted = (clienteId: string) => {
-    const cliente = clientes.find(c => c.id === clienteId);
-    return cliente?.veiculo?.id ? checklistCompleted[cliente.veiculo.id] : false;
-  };
 
   const filteredClientes = clientes.filter(cliente => 
     cliente.nome?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -221,21 +151,6 @@ export default function Clients() {
                             variant="ghost" 
                             size="sm" 
                             className="h-8 w-8 p-0" 
-                            title="Checklist do veículo"
-                            onClick={() => handleOpenChecklist(cliente.id, cliente.nome)}
-                          >
-                            <ClipboardList 
-                              className={`h-4 w-4 ${
-                                hasChecklistCompleted(cliente.id) 
-                                  ? 'text-yellow-600' 
-                                  : 'text-foreground'
-                              }`} 
-                            />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 w-8 p-0" 
                             title="Ver detalhes"
                             onClick={() => navigate(`/cliente/${cliente.id}`)}
                           >
@@ -284,22 +199,6 @@ export default function Clients() {
           </div>
         </div>
       </Card>
-
-      {/* Modals */}
-      <VehicleSelectionModal
-        open={vehicleSelectionOpen}
-        onOpenChange={setVehicleSelectionOpen}
-        clienteId={selectedClienteId}
-        clienteNome={selectedClienteNome}
-        onVehicleSelected={handleVehicleSelected}
-      />
-
-      <ChecklistModal
-        open={checklistModalOpen}
-        onOpenChange={setChecklistModalOpen}
-        veiculoId={selectedVeiculoId}
-        onSave={handleChecklistSaved}
-      />
     </div>
   );
 }
