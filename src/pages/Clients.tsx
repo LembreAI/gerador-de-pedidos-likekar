@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Eye, Edit, Trash2, Plus, Phone, Car, MapPin, Mail } from "lucide-react";
+import { Search, Eye, Edit, Trash2, Plus, Phone, Car, MapPin, Mail, Download } from "lucide-react";
 import { useClientes } from "@/contexts/ClientesContext";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function Clients() {
   const {
@@ -22,6 +23,7 @@ export default function Clients() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [localLoading, setLocalLoading] = useState(loading);
+  const [selectedClientes, setSelectedClientes] = useState<string[]>([]);
 
   // Sincronizar estado de loading local
   useEffect(() => {
@@ -59,6 +61,92 @@ export default function Clients() {
     }
   };
 
+  const handleSelectCliente = (clienteId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedClientes(prev => [...prev, clienteId]);
+    } else {
+      setSelectedClientes(prev => prev.filter(id => id !== clienteId));
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedClientes(filteredClientes.map(cliente => cliente.id));
+    } else {
+      setSelectedClientes([]);
+    }
+  };
+
+  const exportToCSV = () => {
+    const selectedClientesData = clientes.filter(cliente => 
+      selectedClientes.includes(cliente.id)
+    );
+
+    if (selectedClientesData.length === 0) {
+      toast({
+        title: "Nenhum cliente selecionado",
+        description: "Selecione pelo menos um cliente para exportar.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const csvHeaders = [
+      "Nome",
+      "Telefone", 
+      "Email",
+      "CPF/CNPJ",
+      "Endereço",
+      "Cidade",
+      "Estado",
+      "CEP",
+      "Marca do Veículo",
+      "Modelo do Veículo",
+      "Ano do Veículo",
+      "Placa",
+      "Cor",
+      "Combustível",
+      "Chassi"
+    ];
+
+    const csvData = selectedClientesData.map(cliente => [
+      cliente.nome || "",
+      cliente.telefone || "",
+      cliente.email || "",
+      cliente.cpf_cnpj || "",
+      cliente.endereco || "",
+      cliente.cidade || "",
+      cliente.estado || "",
+      cliente.cep || "",
+      cliente.veiculo?.marca || "",
+      cliente.veiculo?.modelo || "",
+      cliente.veiculo?.ano || "",
+      cliente.veiculo?.placa || "",
+      cliente.veiculo?.cor || "",
+      cliente.veiculo?.combustivel || "",
+      cliente.veiculo?.chassi || ""
+    ]);
+
+    const csvContent = [csvHeaders, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `clientes_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Exportação concluída",
+      description: `${selectedClientesData.length} cliente(s) exportado(s) com sucesso.`
+    });
+  };
+
   console.log('📊 Clients.tsx: Estado atual dos clientes:', { clientes, loading, localLoading, clientesLength: clientes.length });
 
   return (
@@ -71,10 +159,20 @@ export default function Clients() {
             Gerencie todos os clientes cadastrados
           </p>
         </div>
-        <Button onClick={() => navigate('/cliente/novo')}>
-          <Plus className="h-4 w-4 mr-2" />
-          Adicionar Cliente
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={exportToCSV}
+            disabled={selectedClientes.length === 0}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Exportar CSV ({selectedClientes.length})
+          </Button>
+          <Button onClick={() => navigate('/cliente/novo')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar Cliente
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -99,7 +197,12 @@ export default function Clients() {
             <Table>
               <TableHeader>
                 <TableRow className="border-b bg-muted/30">
-                  <TableHead className="w-12"></TableHead>
+                  <TableHead className="w-12">
+                    <Checkbox 
+                      checked={filteredClientes.length > 0 && selectedClientes.length === filteredClientes.length}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead className="font-medium text-muted-foreground">Nome</TableHead>
                   <TableHead className="font-medium text-muted-foreground">Telefone</TableHead>
                   <TableHead className="font-medium text-muted-foreground">Email</TableHead>
@@ -109,22 +212,25 @@ export default function Clients() {
               </TableHeader>
               <TableBody>
                 {localLoading && clientes.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      Carregando clientes...
-                    </TableCell>
-                  </TableRow>
-                ) : filteredClientes.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      {clientes.length === 0 ? "Nenhum cliente encontrado" : "Nenhum resultado para a busca"}
-                    </TableCell>
-                  </TableRow>
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        Carregando clientes...
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredClientes.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        {clientes.length === 0 ? "Nenhum cliente encontrado" : "Nenhum resultado para a busca"}
+                      </TableCell>
+                    </TableRow>
                 ) : (
                   filteredClientes.map(cliente => (
                     <TableRow key={cliente.id} className="hover:bg-muted/30 border-b">
                       <TableCell className="w-12">
-                        <input type="checkbox" className="w-4 h-4 rounded border border-input bg-background" />
+                        <Checkbox 
+                          checked={selectedClientes.includes(cliente.id)}
+                          onCheckedChange={(checked) => handleSelectCliente(cliente.id, checked as boolean)}
+                        />
                       </TableCell>
                       <TableCell className="font-medium text-foreground">{cliente.nome}</TableCell>
                       <TableCell className="text-muted-foreground">
