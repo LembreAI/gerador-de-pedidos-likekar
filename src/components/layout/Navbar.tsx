@@ -3,44 +3,60 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, FileText, Users, Wrench, DollarSign, Settings, Menu, X, LogOut } from "lucide-react";
+import { PlusCircle, FileText, Users, Wrench, DollarSign, Menu, X, LogOut, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-const menuItems = [{
-  id: "novo-pedido",
-  label: "Novo Pedido",
-  icon: PlusCircle,
-  path: "/"
-}, {
-  id: "pedidos",
-  label: "Pedidos",
-  icon: FileText,
-  path: "/pedidos"
-}, {
-  id: "clientes",
-  label: "Clientes",
-  icon: Users,
-  path: "/clientes"
-}, {
-  id: "vendedores",
-  label: "Vendedores",
-  icon: Users,
-  path: "/vendedores"
-}, {
-  id: "instaladores",
-  label: "Instaladores",
-  icon: Wrench,
-  path: "/instaladores"
-}, {
-  id: "comissoes",
-  label: "Comissões",
-  icon: DollarSign,
-  path: "/comissoes"
-}, {
-  id: "configuracoes",
-  label: "Configurações",
-  icon: Settings,
-  path: "/configuracoes"
-}];
+
+const allMenuItems = [
+  {
+    id: "novo-pedido",
+    label: "Novo Pedido",
+    icon: PlusCircle,
+    path: "/",
+    requiredRole: null, // Available to all
+  },
+  {
+    id: "pedidos",
+    label: "Pedidos",
+    icon: FileText,
+    path: "/pedidos",
+    requiredRole: null, // Available to all
+  },
+  {
+    id: "clientes",
+    label: "Clientes",
+    icon: Users,
+    path: "/clientes",
+    requiredRole: null, // Available to all
+  },
+  {
+    id: "vendedores",
+    label: "Vendedores",
+    icon: Users,
+    path: "/vendedores",
+    requiredRole: "admin", // Admin only
+  },
+  {
+    id: "instaladores",
+    label: "Instaladores",
+    icon: Wrench,
+    path: "/instaladores",
+    requiredRole: "admin", // Admin only
+  },
+  {
+    id: "comissoes",
+    label: "Comissões",
+    icon: DollarSign,
+    path: "/comissoes",
+    requiredRole: "admin", // Admin only
+  },
+  {
+    id: "usuarios",
+    label: "Central de Usuários",
+    icon: Shield,
+    path: "/usuarios",
+    requiredRole: "admin", // Admin only
+  },
+];
 export function Navbar() {
   const location = useLocation();
   
@@ -49,7 +65,14 @@ export function Navbar() {
     return null;
   }
 
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin, userRole } = useAuth();
+
+  // Filter menu items based on user role
+  const menuItems = allMenuItems.filter(item => {
+    if (item.requiredRole === null) return true; // Available to all
+    if (item.requiredRole === "admin") return isAdmin;
+    return true;
+  });
 
   const getUserInitials = () => {
     if (!user?.email) return "U";
@@ -139,7 +162,7 @@ export function Navbar() {
                   {user?.email || "Usuário"}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  Administrador
+                  {userRole === 'admin' ? 'Administrador' : 'Vendedor'}
                 </p>
               </div>
             </div>
