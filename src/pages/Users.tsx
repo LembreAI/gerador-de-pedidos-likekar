@@ -94,53 +94,42 @@ export default function Users() {
     e.preventDefault();
     
     try {
-      // Create user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: newUser.email,
-        password: newUser.password,
-        user_metadata: {
-          full_name: newUser.nome
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      // Call the Edge Function to create user
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          nome: newUser.nome,
+          email: newUser.email,
+          password: newUser.password,
+          role: newUser.role
+        },
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
         }
       });
 
-      if (authError) throw authError;
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-      if (authData.user) {
-        // Create profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            user_id: authData.user.id,
-            nome: newUser.nome,
-            email: newUser.email
-          });
+      toast({
+        title: "Usuário criado com sucesso!",
+        description: `${newUser.nome} foi adicionado ao sistema.`,
+      });
 
-        if (profileError) throw profileError;
-
-        // Update user role if not vendedor (default)
-        if (newUser.role === 'admin') {
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .update({ role: 'admin' })
-            .eq('user_id', authData.user.id);
-
-          if (roleError) throw roleError;
-        }
-
-        toast({
-          title: "Usuário criado com sucesso!",
-          description: `${newUser.nome} foi adicionado ao sistema.`,
-        });
-
-        setNewUser({
-          nome: '',
-          email: '',
-          password: '',
-          role: 'vendedor'
-        });
-        setShowAddForm(false);
-        fetchUsers();
-      }
+      setNewUser({
+        nome: '',
+        email: '',
+        password: '',
+        role: 'vendedor'
+      });
+      setShowAddForm(false);
+      fetchUsers();
     } catch (error: any) {
       console.error('Error creating user:', error);
       toast({
