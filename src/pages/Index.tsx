@@ -16,15 +16,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
 // Definição dos passos
-const steps = [
-  { id: 1, title: "Upload PDF", description: "Enviar recibo em PDF" },
-  { id: 2, title: "Dados do Veículo", description: "Informações do veículo" },
-  { id: 3, title: "Instaladores por Produto", description: "Atribuir instaladores" },
-  { id: 4, title: "Gerar Pedido", description: "Finalizar e gerar o pedido" }
-];
-
+const steps = [{
+  id: 1,
+  title: "Upload PDF",
+  description: "Enviar recibo em PDF"
+}, {
+  id: 2,
+  title: "Dados do Veículo",
+  description: "Informações do veículo"
+}, {
+  id: 3,
+  title: "Instaladores por Produto",
+  description: "Atribuir instaladores"
+}, {
+  id: 4,
+  title: "Gerar Pedido",
+  description: "Finalizar e gerar o pedido"
+}];
 const Index = () => {
-  const { reloadOrders } = useOrders();
+  const {
+    reloadOrders
+  } = useOrders();
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -38,25 +50,31 @@ const Index = () => {
     vendedor: ""
   });
   const [productsWithInstallers, setProductsWithInstallers] = useState<any[]>([]);
-  const { toast } = useToast();
-  const { vendedores } = useVendedores();
-  const { instaladores } = useInstaladores();
+  const {
+    toast
+  } = useToast();
+  const {
+    vendedores
+  } = useVendedores();
+  const {
+    instaladores
+  } = useInstaladores();
   const navigate = useNavigate();
-
   const handleFileSelect = (file: File) => {
     setUploadedFile(file);
   };
-
   const handleDataExtracted = (data: any) => {
     setExtractedData(data);
     // Extrair vendedor do PDF e pré-preencher
     if (data.vendedor) {
-      setVehicleData(prev => ({...prev, vendedor: data.vendedor}));
+      setVehicleData(prev => ({
+        ...prev,
+        vendedor: data.vendedor
+      }));
     }
     setCompletedSteps([...completedSteps, 1]);
     setCurrentStep(2);
   };
-
   const handleNextStep = () => {
     if (currentStep < steps.length && isStepValid()) {
       setCurrentStep(currentStep + 1);
@@ -67,16 +85,13 @@ const Index = () => {
       }
     }
   };
-
   const handlePreviousStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
   };
-
   const handleGenerateOrder = async (saveAndGoToOrders: boolean = false) => {
     if (!extractedData) return;
-
     try {
       // Combinar dados extraídos com dados do formulário
       const orderData: PedidoData = {
@@ -95,9 +110,10 @@ const Index = () => {
         },
         produtosComInstaladores: productsWithInstallers
       };
-
       const pdfBytes = await generateLikeKarPDF(orderData);
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const blob = new Blob([pdfBytes], {
+        type: 'application/pdf'
+      });
 
       // Salvar pedido no Supabase (incluindo upload do PDF)
       await saveOrderToSupabase(orderData, blob, saveAndGoToOrders);
@@ -116,14 +132,11 @@ const Index = () => {
         setTimeout(() => URL.revokeObjectURL(url), 100);
         console.log('✅ Download automático concluído');
       }
-
       setCompletedSteps([...completedSteps, 3]);
-      
       toast({
         title: "Pedido salvo com sucesso!",
         description: saveAndGoToOrders ? "Navegando para a lista de pedidos..." : "O arquivo PDF foi baixado automaticamente."
       });
-
       if (saveAndGoToOrders) {
         // Recarregar a lista de pedidos antes de navegar
         await reloadOrders();
@@ -138,7 +151,6 @@ const Index = () => {
       });
     }
   };
-
   const saveOrderToSupabase = async (orderData: any, pdfBlob: Blob, goToOrders: boolean) => {
     try {
       // Primeiro, salvar ou buscar o cliente IDENTIFICANDO POR TELEFONE
@@ -153,38 +165,30 @@ const Index = () => {
         cpf_cnpj: orderData.cliente.cnpj || '',
         user_id: (await supabase.auth.getUser()).data.user?.id
       };
-
       console.log('🔍 Verificando cliente por telefone:', clienteData.telefone);
-
       let clienteId;
-      
+
       // IDENTIFICAR CLIENTE POR TELEFONE para evitar duplicação
       if (clienteData.telefone && clienteData.telefone.trim() !== '') {
-        const { data: existingCliente } = await supabase
-          .from('clientes')
-          .select('id, nome, telefone, email, endereco, cidade, estado, cep, cpf_cnpj')
-          .eq('telefone', clienteData.telefone)
-          .eq('user_id', clienteData.user_id)
-          .maybeSingle();
-
+        const {
+          data: existingCliente
+        } = await supabase.from('clientes').select('id, nome, telefone, email, endereco, cidade, estado, cep, cpf_cnpj').eq('telefone', clienteData.telefone).eq('user_id', clienteData.user_id).maybeSingle();
         if (existingCliente) {
           console.log(`✅ Cliente encontrado por telefone: ${existingCliente.nome} (ID: ${existingCliente.id})`);
           clienteId = existingCliente.id;
-          
+
           // Atualizar dados do cliente se necessário (manter dados mais recentes)
-          const { error: updateError } = await supabase
-            .from('clientes')
-            .update({
-              nome: clienteData.nome,
-              email: clienteData.email || existingCliente.email,
-              endereco: clienteData.endereco || existingCliente.endereco,
-              cidade: clienteData.cidade || existingCliente.cidade,
-              estado: clienteData.estado || existingCliente.estado,
-              cep: clienteData.cep || existingCliente.cep,
-              cpf_cnpj: clienteData.cpf_cnpj || existingCliente.cpf_cnpj
-            })
-            .eq('id', clienteId);
-            
+          const {
+            error: updateError
+          } = await supabase.from('clientes').update({
+            nome: clienteData.nome,
+            email: clienteData.email || existingCliente.email,
+            endereco: clienteData.endereco || existingCliente.endereco,
+            cidade: clienteData.cidade || existingCliente.cidade,
+            estado: clienteData.estado || existingCliente.estado,
+            cep: clienteData.cep || existingCliente.cep,
+            cpf_cnpj: clienteData.cpf_cnpj || existingCliente.cpf_cnpj
+          }).eq('id', clienteId);
           if (updateError) {
             console.warn('⚠️ Erro ao atualizar dados do cliente:', updateError);
           } else {
@@ -192,12 +196,10 @@ const Index = () => {
           }
         } else {
           console.log('👤 Cliente não encontrado, criando novo...');
-          const { data: newCliente, error: clienteError } = await supabase
-            .from('clientes')
-            .insert(clienteData)
-            .select('id')
-            .single();
-
+          const {
+            data: newCliente,
+            error: clienteError
+          } = await supabase.from('clientes').insert(clienteData).select('id').single();
           if (clienteError) throw clienteError;
           clienteId = newCliente.id;
           console.log(`✅ Novo cliente criado: ${clienteData.nome} (ID: ${clienteId})`);
@@ -205,22 +207,16 @@ const Index = () => {
       } else {
         // Se não tem telefone, usar o método antigo por nome
         console.log('⚠️ Cliente sem telefone, verificando por nome...');
-        const { data: existingCliente } = await supabase
-          .from('clientes')
-          .select('id')
-          .eq('nome', clienteData.nome)
-          .eq('user_id', clienteData.user_id)
-          .maybeSingle();
-
+        const {
+          data: existingCliente
+        } = await supabase.from('clientes').select('id').eq('nome', clienteData.nome).eq('user_id', clienteData.user_id).maybeSingle();
         if (existingCliente) {
           clienteId = existingCliente.id;
         } else {
-          const { data: newCliente, error: clienteError } = await supabase
-            .from('clientes')
-            .insert(clienteData)
-            .select('id')
-            .single();
-
+          const {
+            data: newCliente,
+            error: clienteError
+          } = await supabase.from('clientes').insert(clienteData).select('id').single();
           if (clienteError) throw clienteError;
           clienteId = newCliente.id;
         }
@@ -228,46 +224,40 @@ const Index = () => {
 
       // Buscar ou criar o veículo IDENTIFICANDO POR PLACA para evitar duplicação
       console.log('🚗 Verificando veículo por placa:', orderData.veiculo.placa);
-      
       let veiculo;
-      
+
       // IDENTIFICAR VEÍCULO POR PLACA para o cliente específico
       if (orderData.veiculo.placa && orderData.veiculo.placa.trim() !== '') {
-        const { data: existingVeiculo } = await supabase
-          .from('veiculos')
-          .select('id, marca, modelo, placa, ano, cor')
-          .eq('cliente_id', clienteId)
-          .eq('placa', orderData.veiculo.placa)
-          .maybeSingle();
-
+        const {
+          data: existingVeiculo
+        } = await supabase.from('veiculos').select('id, marca, modelo, placa, ano, cor').eq('cliente_id', clienteId).eq('placa', orderData.veiculo.placa).maybeSingle();
         if (existingVeiculo) {
           console.log(`✅ Veículo encontrado por placa: ${existingVeiculo.marca} ${existingVeiculo.modelo} - ${existingVeiculo.placa} (ID: ${existingVeiculo.id})`);
-          
-          // Atualizar dados do veículo se necessário (manter dados mais recentes)
-          const { data: updatedVeiculo, error: veiculoError } = await supabase
-            .from('veiculos')
-            .update({
-              marca: orderData.veiculo.marca,
-              modelo: orderData.veiculo.modelo,
-              ano: parseInt(orderData.veiculo.ano) || existingVeiculo.ano,
-              cor: orderData.veiculo.cor || existingVeiculo.cor,
-              chassi: '',
-              combustivel: ''
-            })
-            .eq('id', existingVeiculo.id)
-            .select('id')
-            .single();
 
+          // Atualizar dados do veículo se necessário (manter dados mais recentes)
+          const {
+            data: updatedVeiculo,
+            error: veiculoError
+          } = await supabase.from('veiculos').update({
+            marca: orderData.veiculo.marca,
+            modelo: orderData.veiculo.modelo,
+            ano: parseInt(orderData.veiculo.ano) || existingVeiculo.ano,
+            cor: orderData.veiculo.cor || existingVeiculo.cor,
+            chassi: '',
+            combustivel: ''
+          }).eq('id', existingVeiculo.id).select('id').single();
           if (veiculoError) {
             console.warn('⚠️ Erro ao atualizar dados do veículo:', veiculoError);
-            veiculo = { id: existingVeiculo.id };
+            veiculo = {
+              id: existingVeiculo.id
+            };
           } else {
             veiculo = updatedVeiculo;
             console.log('📝 Dados do veículo atualizados');
           }
         } else {
           console.log('🚗 Veículo com esta placa não encontrado para este cliente, criando novo...');
-          
+
           // Criar novo veículo para este cliente
           const veiculoData = {
             marca: orderData.veiculo.marca,
@@ -279,13 +269,10 @@ const Index = () => {
             combustivel: '',
             cliente_id: clienteId
           };
-
-          const { data: newVeiculo, error: veiculoError } = await supabase
-            .from('veiculos')
-            .insert(veiculoData)
-            .select('id')
-            .single();
-
+          const {
+            data: newVeiculo,
+            error: veiculoError
+          } = await supabase.from('veiculos').insert(veiculoData).select('id').single();
           if (veiculoError) throw veiculoError;
           veiculo = newVeiculo;
           console.log(`✅ Novo veículo criado: ${veiculoData.marca} ${veiculoData.modelo} - ${veiculoData.placa} (ID: ${veiculo.id})`);
@@ -293,12 +280,9 @@ const Index = () => {
       } else {
         // Se não tem placa, usar o método antigo (buscar o primeiro veículo do cliente)
         console.log('⚠️ Veículo sem placa, verificando primeiro veículo do cliente...');
-        const { data: existingVeiculo } = await supabase
-          .from('veiculos')
-          .select('id')
-          .eq('cliente_id', clienteId)
-          .maybeSingle();
-
+        const {
+          data: existingVeiculo
+        } = await supabase.from('veiculos').select('id').eq('cliente_id', clienteId).maybeSingle();
         if (existingVeiculo) {
           // Atualizar veículo existente
           const veiculoData = {
@@ -310,14 +294,10 @@ const Index = () => {
             chassi: '',
             combustivel: ''
           };
-
-          const { data: updatedVeiculo, error: veiculoError } = await supabase
-            .from('veiculos')
-            .update(veiculoData)
-            .eq('id', existingVeiculo.id)
-            .select('id')
-            .single();
-
+          const {
+            data: updatedVeiculo,
+            error: veiculoError
+          } = await supabase.from('veiculos').update(veiculoData).eq('id', existingVeiculo.id).select('id').single();
           if (veiculoError) throw veiculoError;
           veiculo = updatedVeiculo;
         } else {
@@ -332,13 +312,10 @@ const Index = () => {
             combustivel: '',
             cliente_id: clienteId
           };
-
-          const { data: newVeiculo, error: veiculoError } = await supabase
-            .from('veiculos')
-            .insert(veiculoData)
-            .select('id')
-            .single();
-
+          const {
+            data: newVeiculo,
+            error: veiculoError
+          } = await supabase.from('veiculos').insert(veiculoData).select('id').single();
           if (veiculoError) throw veiculoError;
           veiculo = newVeiculo;
         }
@@ -346,13 +323,10 @@ const Index = () => {
 
       // Buscar IDs dos vendedor
       let vendedorId = null;
-
       if (orderData.responsaveis.vendedor) {
-        const { data: vendedor } = await supabase
-          .from('vendedores')
-          .select('id')
-          .eq('nome', orderData.responsaveis.vendedor)
-          .maybeSingle();
+        const {
+          data: vendedor
+        } = await supabase.from('vendedores').select('id').eq('nome', orderData.responsaveis.vendedor).maybeSingle();
         vendedorId = vendedor?.id;
       }
 
@@ -368,13 +342,10 @@ const Index = () => {
           const valor = parseFloat(produto.valorUnitario?.replace(/[^\d,]/g, '').replace(',', '.') || '0');
           valorProduto = valor * (produto.quantidade || 1);
         }
-        
         console.log(`💰 Produto: ${produto.descricao} - Valor: ${valorProduto}`);
         return total + valorProduto;
       }, 0);
-      
       console.log(`💰 Valor total calculado: R$ ${valorTotal.toFixed(2)}`);
-
       console.log(`✅ Criando pedido ${orderData.pedido.numero}...`);
 
       // Salvar o pedido com dados originais do PDF
@@ -384,7 +355,8 @@ const Index = () => {
         cliente_id: clienteId,
         veiculo_id: veiculo.id,
         vendedor_id: vendedorId,
-        instalador_id: null, // Não mais atribuído no nível do pedido
+        instalador_id: null,
+        // Não mais atribuído no nível do pedido
         valor_total: valorTotal,
         status: 'pendente',
         responsavel_nome: orderData.cliente?.nome || 'N/A',
@@ -392,30 +364,25 @@ const Index = () => {
         observacoes: orderData.observacoes || '',
         dados_pdf_original: JSON.stringify(orderData) // Salvar dados originais do PDF
       };
-
-      const { data: pedido, error: pedidoError } = await supabase
-        .from('pedidos')
-        .insert(pedidoData)
-        .select('id')
-        .single();
-
+      const {
+        data: pedido,
+        error: pedidoError
+      } = await supabase.from('pedidos').insert(pedidoData).select('id').single();
       if (pedidoError) throw pedidoError;
 
       // Upload do PDF para o storage do Supabase
       console.log('📤 Fazendo upload do PDF para o storage...');
       const user = (await supabase.auth.getUser()).data.user;
       if (!user) throw new Error('Usuário não autenticado');
-      
       const fileName = `${user.id}/${orderData.pedido.numero}_${Date.now()}.pdf`;
       console.log('📂 Nome do arquivo:', fileName);
-      
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('pdfs')
-        .upload(fileName, pdfBlob, {
-          contentType: 'application/pdf',
-          upsert: false
-        });
-
+      const {
+        data: uploadData,
+        error: uploadError
+      } = await supabase.storage.from('pdfs').upload(fileName, pdfBlob, {
+        contentType: 'application/pdf',
+        upsert: false
+      });
       if (uploadError) {
         console.error('❌ Erro ao fazer upload do PDF:', uploadError);
         throw new Error(`Erro no upload do PDF: ${uploadError.message}`);
@@ -423,42 +390,39 @@ const Index = () => {
       console.log('✅ Upload realizado:', uploadData.path);
 
       // Para bucket privado, usar URL assinada (válida por 1 ano)
-      const { data: urlData, error: urlError } = await supabase.storage
-        .from('pdfs')
-        .createSignedUrl(fileName, 60 * 60 * 24 * 365); // 1 ano
-      
+      const {
+        data: urlData,
+        error: urlError
+      } = await supabase.storage.from('pdfs').createSignedUrl(fileName, 60 * 60 * 24 * 365); // 1 ano
+
       if (urlError) {
         console.error('❌ Erro ao gerar URL assinada:', urlError);
         throw new Error(`Erro ao gerar URL: ${urlError.message}`);
       }
-      
       console.log('🔗 URL assinada do PDF:', urlData.signedUrl);
 
       // Atualizar pedido com a URL do PDF gerado
-      const { error: updateError } = await supabase
-        .from('pedidos')
-        .update({ pdf_gerado_url: urlData.signedUrl })
-        .eq('id', pedido.id);
-
+      const {
+        error: updateError
+      } = await supabase.from('pedidos').update({
+        pdf_gerado_url: urlData.signedUrl
+      }).eq('id', pedido.id);
       if (updateError) {
         console.error('❌ Erro ao atualizar URL do PDF:', updateError);
         throw updateError;
       }
-
       console.log('✅ PDF salvo com sucesso:', urlData.signedUrl);
 
       // Salvar os produtos do pedido com seus instaladores
       console.log('📦 Produtos a serem salvos:', orderData.produtos);
       console.log('🔧 Produtos com instaladores:', orderData.produtosComInstaladores);
-      
       if (orderData.produtos && orderData.produtos.length > 0) {
         const produtosData = orderData.produtos.map((produto: any, index: number) => {
           // Buscar dados do instalador para este produto
           const produtoComInstalador = orderData.produtosComInstaladores?.find((p: any) => p.id === `produto-${index}`);
-          
+
           // Tratar os diferentes campos de valor que podem vir do PDF
           let valorUnitario = 0;
-          
           if (produto.unitario !== undefined) {
             valorUnitario = parseFloat(produto.unitario) || 0;
           } else if (produto.valorUnitario) {
@@ -470,16 +434,13 @@ const Index = () => {
           } else if (produto.total && produto.quantidade) {
             valorUnitario = parseFloat(produto.total) / (produto.quantidade || 1);
           }
-          
           const quantidade = produto.quantidade || 1;
           const valorTotal = valorUnitario * quantidade;
-          
           console.log(`📦 Produto: ${produto.descricao}`);
           console.log(`   - Qtd: ${quantidade}`);
           console.log(`   - Unit calculado: ${valorUnitario}`);
           console.log(`   - Total: ${valorTotal}`);
           console.log(`   - Instalador: ${produtoComInstalador?.instalador_nome || 'Nenhum'}`);
-          
           return {
             pedido_id: pedido.id,
             descricao: produto.descricao || 'Produto',
@@ -489,24 +450,20 @@ const Index = () => {
             instalador_id: produtoComInstalador?.instalador_id || null
           };
         });
-
         console.log('📦 Dados formatados dos produtos:', produtosData);
 
         // Primeiro salvar os produtos
-        const { error: produtosError } = await supabase
-          .from('produtos_pedido')
-          .insert(produtosData);
-
+        const {
+          error: produtosError
+        } = await supabase.from('produtos_pedido').insert(produtosData);
         if (produtosError) {
           console.error('❌ Erro ao salvar produtos:', produtosError);
           throw produtosError;
         }
-        
         console.log('✅ Produtos salvos com sucesso!');
       } else {
         console.log('⚠️ Nenhum produto encontrado para salvar');
       }
-
       toast({
         title: "Pedido salvo com sucesso!",
         description: `Pedido ${orderData.pedido.numero} foi criado.`
@@ -516,13 +473,11 @@ const Index = () => {
       if (goToOrders) {
         navigate('/pedidos');
       }
-
     } catch (error) {
       console.error('Erro ao salvar no Supabase:', error);
       throw error;
     }
   };
-
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
@@ -530,26 +485,19 @@ const Index = () => {
       case 2:
         return vehicleData.marca && vehicleData.modelo && vehicleData.placa && vehicleData.vendedor;
       case 3:
-        return true; // Instaladores são opcionais por produto
+        return true;
+      // Instaladores são opcionais por produto
       default:
         return true;
     }
   };
-
-  return (
-    <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+  return <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Like Kar</h1>
-          <p className="text-muted-foreground text-sm sm:text-base px-2">
-            Processe recibos em PDF e gere pedidos formatados automaticamente
-          </p>
-        </div>
+        
 
 
         {/* Conteúdo baseado no passo atual */}
-        {currentStep === 1 && (
-          <Card>
+        {currentStep === 1 && <Card>
             <CardHeader className="px-4 sm:px-6 py-4 sm:py-6">
               <CardTitle className="text-lg sm:text-xl">Upload do Recibo PDF</CardTitle>
               <CardDescription className="text-sm">
@@ -557,18 +505,11 @@ const Index = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="px-4 sm:px-6">
-              <FileUpload
-                onFileSelect={handleFileSelect}
-                onDataExtracted={handleDataExtracted}
-                title="Selecione o recibo PDF"
-                description="Arraste e solte o arquivo PDF aqui ou clique para selecionar"
-              />
+              <FileUpload onFileSelect={handleFileSelect} onDataExtracted={handleDataExtracted} title="Selecione o recibo PDF" description="Arraste e solte o arquivo PDF aqui ou clique para selecionar" />
             </CardContent>
-          </Card>
-        )}
+          </Card>}
 
-        {currentStep === 2 && (
-          <Card>
+        {currentStep === 2 && <Card>
             <CardHeader className="px-4 sm:px-6 py-4 sm:py-6">
               <CardTitle className="text-lg sm:text-xl">Dados do Veículo</CardTitle>
               <CardDescription className="text-sm">
@@ -576,8 +517,7 @@ const Index = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 px-4 sm:px-6">
-              {extractedData && (
-                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-secondary rounded-lg">
+              {extractedData && <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-secondary rounded-lg">
                   <h3 className="font-medium mb-2 text-sm sm:text-base">Dados Extraídos do PDF:</h3>
                   <div className="space-y-1 sm:grid sm:grid-cols-2 sm:gap-2 sm:space-y-0 text-xs sm:text-sm">
                     <p><strong>Cliente:</strong> {extractedData?.cliente?.nome || 'N/A'}</p>
@@ -585,77 +525,65 @@ const Index = () => {
                     <p><strong>Total:</strong> R$ {extractedData?.pedido?.valorTotal ? extractedData.pedido.valorTotal.toFixed(2) : 'N/A'}</p>
                     <p><strong>Data:</strong> {extractedData?.pedido?.data || 'N/A'}</p>
                   </div>
-                </div>
-              )}
+                </div>}
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="marca">Marca do Veículo</Label>
-                  <Input
-                    id="marca"
-                    placeholder="Digite a marca do veículo"
-                    value={vehicleData.marca}
-                    onChange={(e) => setVehicleData({...vehicleData, marca: e.target.value})}
-                  />
+                  <Input id="marca" placeholder="Digite a marca do veículo" value={vehicleData.marca} onChange={e => setVehicleData({
+                ...vehicleData,
+                marca: e.target.value
+              })} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="modelo">Modelo do Veículo</Label>
-                  <Input
-                    id="modelo"
-                    placeholder="Digite o modelo do veículo"
-                    value={vehicleData.modelo}
-                    onChange={(e) => setVehicleData({...vehicleData, modelo: e.target.value})}
-                  />
+                  <Input id="modelo" placeholder="Digite o modelo do veículo" value={vehicleData.modelo} onChange={e => setVehicleData({
+                ...vehicleData,
+                modelo: e.target.value
+              })} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="ano">Ano do Veículo</Label>
-                  <Input
-                    id="ano"
-                    placeholder="Digite o ano do veículo"
-                    value={vehicleData.ano}
-                    onChange={(e) => setVehicleData({...vehicleData, ano: e.target.value})}
-                  />
+                  <Input id="ano" placeholder="Digite o ano do veículo" value={vehicleData.ano} onChange={e => setVehicleData({
+                ...vehicleData,
+                ano: e.target.value
+              })} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cor">Cor do Veículo</Label>
-                  <Input
-                    id="cor"
-                    placeholder="Digite a cor do veículo"
-                    value={vehicleData.cor}
-                    onChange={(e) => setVehicleData({...vehicleData, cor: e.target.value})}
-                  />
+                  <Input id="cor" placeholder="Digite a cor do veículo" value={vehicleData.cor} onChange={e => setVehicleData({
+                ...vehicleData,
+                cor: e.target.value
+              })} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="placa">Placa do Veículo</Label>
-                  <Input
-                    id="placa"
-                    placeholder="Digite a placa do veículo"
-                    value={vehicleData.placa}
-                    onChange={(e) => setVehicleData({...vehicleData, placa: e.target.value})}
-                  />
+                  <Input id="placa" placeholder="Digite a placa do veículo" value={vehicleData.placa} onChange={e => setVehicleData({
+                ...vehicleData,
+                placa: e.target.value
+              })} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="vendedor">Vendedor</Label>
-                  <Select value={vehicleData.vendedor} onValueChange={(value) => setVehicleData({...vehicleData, vendedor: value})}>
+                  <Select value={vehicleData.vendedor} onValueChange={value => setVehicleData({
+                ...vehicleData,
+                vendedor: value
+              })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o vendedor" />
                     </SelectTrigger>
                     <SelectContent>
-                      {vendedores.map((vendedor) => (
-                        <SelectItem key={vendedor.id} value={vendedor.nome}>
+                      {vendedores.map(vendedor => <SelectItem key={vendedor.id} value={vendedor.nome}>
                           {vendedor.nome}
-                        </SelectItem>
-                      ))}
+                        </SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
             </CardContent>
-          </Card>
-        )}
+          </Card>}
 
-        {currentStep === 3 && (
-          <Card>
+        {currentStep === 3 && <Card>
             <CardHeader className="px-4 sm:px-6 py-4 sm:py-6">
               <CardTitle className="text-lg sm:text-xl">Instaladores por Produto</CardTitle>
               <CardDescription className="text-sm">
@@ -663,16 +591,11 @@ const Index = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="px-4 sm:px-6">
-              <ProductInstallerStep
-                products={extractedData?.produtos || []}
-                onProductInstallersChange={setProductsWithInstallers}
-              />
+              <ProductInstallerStep products={extractedData?.produtos || []} onProductInstallersChange={setProductsWithInstallers} />
             </CardContent>
-          </Card>
-        )}
+          </Card>}
 
-        {currentStep === 4 && (
-          <Card>
+        {currentStep === 4 && <Card>
             <CardHeader className="px-4 sm:px-6 py-4 sm:py-6">
               <CardTitle className="text-lg sm:text-xl">Resumo e Geração do Pedido</CardTitle>
               <CardDescription className="text-sm">
@@ -680,8 +603,7 @@ const Index = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-              {extractedData && (
-                <div className="bg-muted p-3 sm:p-4 rounded-lg mb-3 sm:mb-4">
+              {extractedData && <div className="bg-muted p-3 sm:p-4 rounded-lg mb-3 sm:mb-4">
                   <h3 className="font-medium mb-2 text-sm sm:text-base">Dados do Cliente (do PDF):</h3>
                   <div className="space-y-1 text-xs sm:text-sm">
                     <p><strong>Nome:</strong> {extractedData?.cliente?.nome || 'N/A'}</p>
@@ -690,8 +612,7 @@ const Index = () => {
                     <p><strong>Telefone:</strong> {extractedData?.cliente?.telefone || 'N/A'}</p>
                     <p><strong>E-mail:</strong> {extractedData?.cliente?.email || 'N/A'}</p>
                   </div>
-                </div>
-              )}
+                </div>}
               
               <div className="bg-muted p-3 sm:p-4 rounded-lg">
                 <h3 className="font-medium mb-2 text-sm sm:text-base">Dados do Veículo:</h3>
@@ -703,17 +624,13 @@ const Index = () => {
                 </div>
               </div>
               
-              {extractedData && (
-                <div className="bg-muted p-3 sm:p-4 rounded-lg">
+              {extractedData && <div className="bg-muted p-3 sm:p-4 rounded-lg">
                   <h3 className="font-medium mb-2 text-sm sm:text-base">Produtos (do PDF):</h3>
                   <div className="space-y-1 text-xs sm:text-sm">
-                    {extractedData.produtos.map((produto: any, index: number) => (
-                      <p key={index}><strong>{produto.descricao}</strong> - {produto.total}</p>
-                    ))}
+                    {extractedData.produtos.map((produto: any, index: number) => <p key={index}><strong>{produto.descricao}</strong> - {produto.total}</p>)}
                     <p className="font-medium mt-2"><strong>Total:</strong> {extractedData.totalPedido}</p>
                   </div>
-                </div>
-              )}
+                </div>}
               
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Button onClick={() => handleGenerateOrder(false)} className="w-full sm:flex-1" size="lg">
@@ -724,30 +641,18 @@ const Index = () => {
                 </Button>
               </div>
             </CardContent>
-          </Card>
-        )}
+          </Card>}
 
         {/* Navegação */}
         <div className="flex justify-between mt-4 sm:mt-6 px-2 sm:px-0">
-          <Button 
-            variant="outline" 
-            onClick={handlePreviousStep}
-            disabled={currentStep === 1}
-            className="text-sm px-4 py-2"
-          >
+          <Button variant="outline" onClick={handlePreviousStep} disabled={currentStep === 1} className="text-sm px-4 py-2">
             Voltar
           </Button>
-          <Button 
-            onClick={handleNextStep}
-            disabled={!isStepValid() || currentStep === steps.length}
-            className="text-sm px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-black"
-          >
+          <Button onClick={handleNextStep} disabled={!isStepValid() || currentStep === steps.length} className="text-sm px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-black">
             {currentStep === steps.length ? "Finalizar" : "Próximo"}
           </Button>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
