@@ -30,7 +30,6 @@ export default function Users() {
   const [newUser, setNewUser] = useState({
     nome: '',
     email: '',
-    telefone: '',
     password: '',
     role: 'vendedor' as 'admin' | 'vendedor'
   });
@@ -113,8 +112,7 @@ export default function Users() {
           .insert({
             user_id: authData.user.id,
             nome: newUser.nome,
-            email: newUser.email,
-            telefone: newUser.telefone || null
+            email: newUser.email
           });
 
         if (profileError) throw profileError;
@@ -137,7 +135,6 @@ export default function Users() {
         setNewUser({
           nome: '',
           email: '',
-          telefone: '',
           password: '',
           role: 'vendedor'
         });
@@ -265,14 +262,6 @@ export default function Users() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="telefone">Telefone</Label>
-                  <Input
-                    id="telefone"
-                    value={newUser.telefone}
-                    onChange={(e) => setNewUser({ ...newUser, telefone: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="password">Senha</Label>
                   <Input
                     id="password"
@@ -324,9 +313,7 @@ export default function Users() {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Telefone</TableHead>
                   <TableHead>Função</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead className="w-[100px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -335,7 +322,6 @@ export default function Users() {
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.nome}</TableCell>
                     <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.telefone || '-'}</TableCell>
                     <TableCell>
                       <Select
                         value={user.role}
@@ -359,11 +345,6 @@ export default function Users() {
                           </SelectItem>
                         </SelectContent>
                       </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.ativo ? "default" : "secondary"}>
-                        {user.ativo ? "Ativo" : "Inativo"}
-                      </Badge>
                     </TableCell>
                     <TableCell>
                       <AlertDialog>
