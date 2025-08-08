@@ -94,6 +94,16 @@ export default function Users() {
     e.preventDefault();
     
     try {
+      // Basic validation
+      if (newUser.password.length < 6) {
+        toast({
+          title: "Senha muito curta",
+          description: "A senha deve ter pelo menos 6 caracteres.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Get the current session
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -114,22 +124,20 @@ export default function Users() {
         }
       });
 
-      if (error) throw error;
-      
+      // Handle function response: prefer response body details even on non-2xx
       if (data?.error) {
         console.error('Function returned error:', data.error);
-        
-        let errorTitle = "Erro ao criar usuário"
-        let errorDescription = "Tente novamente."
-        
-        if (data.error.includes('Email já está em uso')) {
-          errorTitle = "Email em uso"
-          errorDescription = `O email "${newUser.email}" já está cadastrado no sistema. Use um email diferente.`
+        let errorTitle = "Erro ao criar usuário";
+        let errorDescription = "Tente novamente.";
+
+        if (data.error.includes('Email já está em uso') || data.details?.includes('já foi cadastrado')) {
+          errorTitle = "Email em uso";
+          errorDescription = `O email "${newUser.email}" já está cadastrado no sistema. Use um email diferente.`;
         } else if (data.error.includes('Usuário já existe')) {
-          errorTitle = "Usuário já existe"
-          errorDescription = "Este usuário já está cadastrado no sistema."
-        } else {
-          errorDescription = data.error
+          errorTitle = "Usuário já existe";
+          errorDescription = "Este usuário já está cadastrado no sistema.";
+        } else if (typeof data.error === 'string') {
+          errorDescription = data.error;
         }
 
         toast({
@@ -139,6 +147,8 @@ export default function Users() {
         });
         return;
       }
+
+      if (error) throw error;
 
       toast({
         title: "Usuário criado com sucesso!",

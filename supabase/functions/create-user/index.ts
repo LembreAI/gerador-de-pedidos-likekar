@@ -139,12 +139,11 @@ serve(async (req) => {
         )
       }
 
-      // Update user role if not vendedor (default)
+      // Update or insert user role if admin selected
       if (role === 'admin') {
         const { error: roleError } = await supabaseAdmin
           .from('user_roles')
-          .update({ role: 'admin' })
-          .eq('user_id', authData.user.id)
+          .upsert({ user_id: authData.user.id, role: 'admin' }, { onConflict: 'user_id' });
 
         if (roleError) {
           console.error('Role error:', roleError)
