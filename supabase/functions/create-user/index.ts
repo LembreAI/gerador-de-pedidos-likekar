@@ -68,6 +68,20 @@ serve(async (req) => {
 
     const { nome, email, password, role } = await req.json()
 
+    // Check if user already exists
+    const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers()
+    const userExists = existingUser.users.find(user => user.email === email)
+    
+    if (userExists) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Email já está em uso',
+          details: 'Um usuário com este email já foi cadastrado no sistema'
+        }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Create user with admin client
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -78,8 +92,22 @@ serve(async (req) => {
     })
 
     if (authError) {
+      console.error('Auth error:', authError)
+      let errorMessage = 'Erro ao criar usuário'
+      
+      if (authError.message.includes('already been registered')) {
+        errorMessage = 'Email já está em uso'
+      } else if (authError.message.includes('duplicate key')) {
+        errorMessage = 'Usuário já existe no sistema'
+      } else {
+        errorMessage = authError.message
+      }
+
       return new Response(
-        JSON.stringify({ error: authError.message }),
+        JSON.stringify({ 
+          error: errorMessage,
+          details: authError.message
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -95,8 +123,18 @@ serve(async (req) => {
         })
 
       if (profileError) {
+        console.error('Profile error:', profileError)
+        let errorMessage = 'Erro ao criar perfil do usuário'
+        
+        if (profileError.message.includes('duplicate key')) {
+          errorMessage = 'Perfil já existe para este usuário'
+        }
+
         return new Response(
-          JSON.stringify({ error: profileError.message }),
+          JSON.stringify({ 
+            error: errorMessage,
+            details: profileError.message
+          }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
@@ -109,8 +147,12 @@ serve(async (req) => {
           .eq('user_id', authData.user.id)
 
         if (roleError) {
+          console.error('Role error:', roleError)
           return new Response(
-            JSON.stringify({ error: roleError.message }),
+            JSON.stringify({ 
+              error: 'Erro ao definir role do usuário',
+              details: roleError.message
+            }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           )
         }

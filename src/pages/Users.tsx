@@ -115,7 +115,30 @@ export default function Users() {
       });
 
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      
+      if (data?.error) {
+        console.error('Function returned error:', data.error);
+        
+        let errorTitle = "Erro ao criar usuário"
+        let errorDescription = "Tente novamente."
+        
+        if (data.error.includes('Email já está em uso')) {
+          errorTitle = "Email em uso"
+          errorDescription = `O email "${newUser.email}" já está cadastrado no sistema. Use um email diferente.`
+        } else if (data.error.includes('Usuário já existe')) {
+          errorTitle = "Usuário já existe"
+          errorDescription = "Este usuário já está cadastrado no sistema."
+        } else {
+          errorDescription = data.error
+        }
+
+        toast({
+          title: errorTitle,
+          description: errorDescription,
+          variant: "destructive",
+        });
+        return;
+      }
 
       toast({
         title: "Usuário criado com sucesso!",
@@ -132,9 +155,23 @@ export default function Users() {
       fetchUsers();
     } catch (error: any) {
       console.error('Error creating user:', error);
+      
+      let errorTitle = "Erro ao criar usuário"
+      let errorDescription = "Tente novamente."
+      
+      if (error.message?.includes('Email já está em uso') || error.message?.includes('already been registered')) {
+        errorTitle = "Email em uso"
+        errorDescription = `O email "${newUser.email}" já está cadastrado no sistema. Use um email diferente.`
+      } else if (error.message?.includes('Usuário já existe')) {
+        errorTitle = "Usuário já existe"
+        errorDescription = "Este usuário já está cadastrado no sistema."
+      } else if (error.message) {
+        errorDescription = error.message
+      }
+
       toast({
-        title: "Erro ao criar usuário",
-        description: error.message,
+        title: errorTitle,
+        description: errorDescription,
         variant: "destructive",
       });
     }
