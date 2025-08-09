@@ -125,6 +125,14 @@ export default function Users() {
       });
 
       // Handle function response: prefer response body details even on non-2xx
+      if (data?.code === 'email_exists') {
+        toast({
+          title: 'Email em uso',
+          description: `O email "${newUser.email}" já está cadastrado no sistema. Use um email diferente.`,
+          variant: 'destructive',
+        });
+        return;
+      }
       if (data?.error) {
         console.error('Function returned error:', data.error);
         let errorTitle = "Erro ao criar usuário";

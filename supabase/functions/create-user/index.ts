@@ -76,7 +76,8 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           error: 'Email já está em uso',
-          details: 'Um usuário com este email já foi cadastrado no sistema'
+          details: 'Um usuário com este email já foi cadastrado no sistema',
+          code: 'email_exists'
         }),
         { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
@@ -114,33 +115,20 @@ serve(async (req) => {
     }
 
     if (authData.user) {
-      // Create profile
-      const { error: profileError } = await supabaseAdmin
-        .from('profiles')
-        .insert({
-          user_id: authData.user.id,
-          nome,
-          email
-        })
-
-      if (profileError) {
-        console.error('Profile error:', profileError)
-        let errorMessage = 'Erro ao criar perfil do usuário'
-        
-        if (profileError.message.includes('duplicate key')) {
-          errorMessage = 'Perfil já existe para este usuário'
+      // Espera curta para criação automática do perfil (se houver trigger)
+      try {
+        for (let i = 0; i < 5; i++) {
+          const { data: prof } = await supabaseAdmin
+            .from('profiles')
+            .select('user_id')
+            .eq('user_id', authData.user.id)
+            .maybeSingle();
+          if (prof) break;
+          await new Promise((resolve) => setTimeout(resolve, 300));
         }
+      } catch (_) {}
 
-        return new Response(
-          JSON.stringify({ 
-            error: errorMessage,
-            details: profileError.message
-          }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      // Update or insert user role if admin selected
+      // Define role se necessário
       if (role === 'admin') {
         const { error: roleError } = await supabaseAdmin
           .from('user_roles')
