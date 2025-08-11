@@ -76,8 +76,8 @@ export class LikeKarPDFGenerator {
       this.page.drawImage(this.logoImage, {
         x: 70, // Centralizado
         y: this.yPosition - 45, // Logo mais para cima
-        width:40,
-        height: 40,
+        width:65,
+        height: 65,
       });
     }
 
