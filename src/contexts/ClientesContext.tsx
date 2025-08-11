@@ -43,34 +43,39 @@ export const ClientesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return;
       }
 
-      // Buscar dados do veículo para cada cliente
-      const clientesWithDetails = await Promise.all(
-        clientesData.map(async (cliente) => {
-          console.log(`🔍 Processando cliente ${cliente.id}...`);
-          
-          // Buscar veículo do cliente
-          const { data: veiculoData, error: veiculoError } = await supabase
-            .from('veiculos')
-            .select('*')
-            .eq('cliente_id', cliente.id)
-            .maybeSingle();
+      // Buscar veículos de todos os clientes de uma vez e montar mapa de contagem e primeiro veículo
+      const clienteIds = clientesData.map((c) => c.id)
+      const { data: veiculosAll, error: veiculosAllError } = await supabase
+        .from('veiculos')
+        .select('id, cliente_id, marca, modelo, ano, placa, cor, combustivel, chassi')
+        .in('cliente_id', clienteIds)
 
-          if (veiculoError) {
-            console.error('❌ Erro ao buscar veículo:', veiculoError);
-          }
+      if (veiculosAllError) {
+        console.error('❌ Erro ao buscar veículos:', veiculosAllError)
+        throw veiculosAllError
+      }
 
-          const clienteWithDetails = {
-            ...cliente,
-            veiculo: veiculoData
-          };
+      const map = new Map<string, { count: number; first?: any }>()
+      for (const v of veiculosAll || []) {
+        const entry = map.get(v.cliente_id) || { count: 0 }
+        if (!entry.first) entry.first = v
+        entry.count += 1
+        map.set(v.cliente_id, entry)
+      }
 
-          console.log(`✅ Cliente ${cliente.id} processado:`, clienteWithDetails);
-          return clienteWithDetails;
-        })
-      );
+      const clientesWithDetails = clientesData.map((cliente) => {
+        const info = map.get(cliente.id)
+        const clienteWithDetails = {
+          ...cliente,
+          veiculo: info?.first || null,
+          veiculosCount: info?.count || 0,
+        }
+        console.log(`✅ Cliente ${cliente.id} processado:`, clienteWithDetails)
+        return clienteWithDetails
+      })
 
-      console.log('🎉 Todos os clientes processados:', clientesWithDetails);
-      setClientes(clientesWithDetails);
+      console.log('🎉 Todos os clientes processados:', clientesWithDetails)
+      setClientes(clientesWithDetails)
     } catch (error) {
       console.error('💥 Error loading clientes:', error);
     } finally {

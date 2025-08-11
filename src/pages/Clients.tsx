@@ -206,7 +206,7 @@ export default function Clients() {
                   <TableHead className="font-medium text-muted-foreground">Nome</TableHead>
                   <TableHead className="font-medium text-muted-foreground">Telefone</TableHead>
                   <TableHead className="font-medium text-muted-foreground">Email</TableHead>
-                  <TableHead className="font-medium text-muted-foreground">Veículo</TableHead>
+                  <TableHead className="font-medium text-muted-foreground">Veículos</TableHead>
                   <TableHead className="text-right font-medium text-muted-foreground">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -248,7 +248,7 @@ export default function Clients() {
                       <TableCell className="text-muted-foreground">
                         <div className="flex items-center gap-2">
                           <Car className="h-4 w-4" />
-                          {cliente.veiculo ? `${cliente.veiculo.marca} ${cliente.veiculo.modelo} ${cliente.veiculo.ano}` : 'N/A'}
+                          {typeof cliente.veiculosCount === 'number' ? cliente.veiculosCount : (cliente.veiculo ? 1 : 0)}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">

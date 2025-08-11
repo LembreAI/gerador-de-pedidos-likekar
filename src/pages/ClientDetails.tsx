@@ -17,8 +17,10 @@ export default function ClientDetails() {
   const [client, setClient] = useState<any>(null);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true)
     if (id) {
       loadClientData();
     }
@@ -59,6 +61,32 @@ export default function ClientDetails() {
     }
   };
 
+  // SEO: título e descrição
+  useEffect(() => {
+    if (!mounted) return
+    const titleBase = client?.nome ? `Cliente: ${client.nome} | Detalhes` : 'Detalhes do Cliente'
+    document.title = `${titleBase} — Sistema`
+
+    // Meta description
+    const desc = client?.email || client?.telefone || 'Detalhes do cliente e seus veículos'
+    let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null
+    if (!meta) {
+      meta = document.createElement('meta')
+      meta.name = 'description'
+      document.head.appendChild(meta)
+    }
+    meta.content = `${titleBase}. ${desc}`
+
+    // Canonical
+    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null
+    if (!link) {
+      link = document.createElement('link')
+      link.rel = 'canonical'
+      document.head.appendChild(link)
+    }
+    link.href = window.location.href
+  }, [client, mounted])
+
   const handleDeleteClient = async () => {
     try {
       const { error } = await supabase
@@ -73,7 +101,7 @@ export default function ClientDetails() {
         description: "Cliente foi removido com sucesso."
       });
 
-      navigate('/pedidos');
+      navigate('/clientes');
     } catch (error) {
       console.error('Error deleting client:', error);
       toast({
@@ -90,7 +118,7 @@ export default function ClientDetails() {
         <div className="flex items-center gap-4">
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/pedidos')}
+            onClick={() => navigate('/clientes')}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -110,7 +138,7 @@ export default function ClientDetails() {
         <div className="flex items-center gap-4">
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/pedidos')}
+            onClick={() => navigate('/clientes')}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -132,14 +160,19 @@ export default function ClientDetails() {
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={() => navigate('/pedidos')}
+            onClick={() => navigate('/clientes')}
             className="flex items-center gap-2 mt-1"
           >
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </Button>
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl sm:text-3xl font-bold break-words">{client.nome}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold break-words flex items-center gap-3">
+              {client.nome}
+              <Badge variant="secondary" className="text-xs sm:text-sm">
+                {vehicles.length} {vehicles.length === 1 ? 'veículo' : 'veículos'}
+              </Badge>
+            </h1>
             <div className="flex items-center gap-2 mt-1">
               <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <p className="text-base sm:text-lg text-muted-foreground">{client.telefone}</p>
