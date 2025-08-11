@@ -346,7 +346,7 @@ export default function Orders() {
                     </TableCell>
                   </TableRow> : filteredOrders.map(order => <TableRow key={order.id} className="hover:bg-muted/30 border-b">
                       <TableCell className="w-12">
-                        <input type="checkbox" className="w-4 h-4 rounded border border-input bg-background" />
+                        
                       </TableCell>
                        <TableCell className="font-medium text-foreground">
                          <div className="flex items-center gap-2">
