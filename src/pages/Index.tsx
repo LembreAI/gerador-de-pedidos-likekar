@@ -144,9 +144,10 @@ const Index = () => {
       }
     } catch (error) {
       console.error('Erro ao gerar pedido:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Ocorreu um erro ao processar o pedido.';
       toast({
         title: "Erro ao gerar pedido",
-        description: "Ocorreu um erro ao processar o pedido.",
+        description: errorMessage,
         variant: "destructive"
       });
     }
@@ -230,7 +231,7 @@ const Index = () => {
       if (orderData.veiculo.placa && orderData.veiculo.placa.trim() !== '') {
         const {
           data: existingVeiculo
-        } = await supabase.from('veiculos').select('id, marca, modelo, placa, ano, cor').eq('cliente_id', clienteId).eq('placa', orderData.veiculo.placa).maybeSingle();
+        } = await supabase.from('veiculos').select('id, marca, modelo, placa, ano, cor').eq('cliente_id', clienteId).eq('placa', orderData.veiculo.placa.trim()).maybeSingle();
         if (existingVeiculo) {
           console.log(`✅ Veículo encontrado por placa: ${existingVeiculo.marca} ${existingVeiculo.modelo} - ${existingVeiculo.placa} (ID: ${existingVeiculo.id})`);
 
@@ -258,12 +259,12 @@ const Index = () => {
         } else {
           console.log('🚗 Veículo com esta placa não encontrado para este cliente, criando novo...');
 
-          // Criar novo veículo para este cliente
+          // Criar novo veículo para este cliente - convertendo placa vazia para null
           const veiculoData = {
             marca: orderData.veiculo.marca,
             modelo: orderData.veiculo.modelo,
             ano: parseInt(orderData.veiculo.ano),
-            placa: orderData.veiculo.placa || '',
+            placa: orderData.veiculo.placa && orderData.veiculo.placa.trim() ? orderData.veiculo.placa.trim() : null,
             cor: orderData.veiculo.cor || '',
             chassi: '',
             combustivel: '',
@@ -273,12 +274,22 @@ const Index = () => {
             data: newVeiculo,
             error: veiculoError
           } = await supabase.from('veiculos').insert(veiculoData).select('id').single();
-          if (veiculoError) throw veiculoError;
+          
+          if (veiculoError) {
+            console.error('Erro ao criar veículo:', veiculoError);
+            
+            // Verificar se é erro de placa duplicada
+            if (veiculoError.code === '23505' && veiculoError.message.includes('idx_veiculos_placa_unique')) {
+              throw new Error(`A placa ${orderData.veiculo.placa} já está cadastrada para outro veículo`);
+            }
+            throw veiculoError;
+          }
+          
           veiculo = newVeiculo;
           console.log(`✅ Novo veículo criado: ${veiculoData.marca} ${veiculoData.modelo} - ${veiculoData.placa} (ID: ${veiculo.id})`);
         }
       } else {
-        // Se não tem placa, usar o método antigo (buscar o primeiro veículo do cliente)
+        // Se não tem placa, buscar o primeiro veículo do cliente ou criar novo
         console.log('⚠️ Veículo sem placa, verificando primeiro veículo do cliente...');
         const {
           data: existingVeiculo
@@ -289,7 +300,7 @@ const Index = () => {
             marca: orderData.veiculo.marca,
             modelo: orderData.veiculo.modelo,
             ano: parseInt(orderData.veiculo.ano),
-            placa: orderData.veiculo.placa || '',
+            placa: null, // Sem placa = null
             cor: orderData.veiculo.cor || '',
             chassi: '',
             combustivel: ''
@@ -306,7 +317,7 @@ const Index = () => {
             marca: orderData.veiculo.marca,
             modelo: orderData.veiculo.modelo,
             ano: parseInt(orderData.veiculo.ano),
-            placa: orderData.veiculo.placa || '',
+            placa: null, // Sem placa = null
             cor: orderData.veiculo.cor || '',
             chassi: '',
             combustivel: '',
