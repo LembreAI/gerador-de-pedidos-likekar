@@ -54,32 +54,31 @@ export default function Orders() {
     }
   }, []); // Array vazio para executar apenas uma vez
 
-  console.log('📊 Orders.tsx: Estado atual dos pedidos:', { orders, loading, localLoading, ordersLength: orders.length });
-  const filteredOrders = orders.filter(order => 
-    order.cliente?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    order.id?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    `${order.veiculo?.marca} ${order.veiculo?.modelo}`.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  console.log('📊 Orders.tsx: Estado atual dos pedidos:', {
+    orders,
+    loading,
+    localLoading,
+    ordersLength: orders.length
+  });
+  const filteredOrders = orders.filter(order => order.cliente?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) || order.id?.toLowerCase().includes(searchTerm.toLowerCase()) || `${order.veiculo?.marca} ${order.veiculo?.modelo}`.toLowerCase().includes(searchTerm.toLowerCase()));
   const handlePrintOrder = async (order: any) => {
     try {
       console.log('🖨️ Iniciando impressão do pedido:', order.id);
       setLocalLoading(true);
-      
+
       // Buscar detalhes completos do pedido
       const orderDetails = await getOrderWithDetails(order.id);
       console.log('📊 Detalhes completos do pedido:', orderDetails);
-      
       if (!orderDetails) {
         throw new Error('Não foi possível carregar os detalhes do pedido');
       }
-      
+
       // Usar dados originais do PDF se disponíveis, senão usar dados do banco
       let orderData: PedidoData;
-      
       if (orderDetails.dados_pdf_original) {
         console.log('📄 Usando dados originais do PDF para impressão');
         orderData = JSON.parse(orderDetails.dados_pdf_original);
-        
+
         // Atualizar dados que podem ter mudado
         orderData.veiculo = {
           marca: orderDetails.veiculo?.marca || orderData.veiculo.marca,
@@ -88,7 +87,6 @@ export default function Orders() {
           ano: orderDetails.veiculo?.ano?.toString() || orderData.veiculo.ano,
           placa: orderDetails.veiculo?.placa || orderData.veiculo.placa
         };
-        
         orderData.responsaveis = {
           vendedor: orderDetails.vendedor?.nome || orderData.responsaveis.vendedor
         };
@@ -113,13 +111,14 @@ export default function Orders() {
             const valorUnitario = produto.valor_unitario || 0;
             const quantidade = produto.quantidade || 1;
             const total = valorUnitario * quantidade;
-            
             return {
               descricao: produto.descricao || 'Produto',
-              codigo: '001', // Valor padrão
+              codigo: '001',
+              // Valor padrão
               quantidade: quantidade,
               unitario: valorUnitario,
-              desconto: 0, // Valor padrão
+              desconto: 0,
+              // Valor padrão
               total: total
             };
           }),
@@ -136,19 +135,17 @@ export default function Orders() {
           observacoes: orderDetails.observacoes || ''
         };
       }
-
       console.log('📋 Dados formatados para PDF:', orderData);
-        
-        const pdfBytes = await generateLikeKarPDF(orderData);
-        const blob = new Blob([pdfBytes], {
-          type: 'application/pdf'
-        });
-        const url = URL.createObjectURL(blob);
-        
-        // Tentar abrir em nova aba para impressão
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-          printWindow.document.write(`
+      const pdfBytes = await generateLikeKarPDF(orderData);
+      const blob = new Blob([pdfBytes], {
+        type: 'application/pdf'
+      });
+      const url = URL.createObjectURL(blob);
+
+      // Tentar abrir em nova aba para impressão
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(`
             <html>
               <head>
                 <title>Impressão - Pedido ${order.id}</title>
@@ -165,25 +162,23 @@ export default function Orders() {
               </body>
             </html>
           `);
-          printWindow.document.close();
-        } else {
-          // Fallback: download se não conseguir imprimir
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `Pedido_LikeKar_${order.id}.pdf`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
-        
-        // Cleanup
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-      
+        printWindow.document.close();
+      } else {
+        // Fallback: download se não conseguir imprimir
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Pedido_LikeKar_${order.id}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      // Cleanup
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
       toast({
         title: "PDF enviado para impressão",
         description: "O pedido foi enviado para a impressora."
       });
-      
     } catch (error) {
       console.error('❌ Erro ao imprimir pedido:', error);
       toast({
@@ -195,11 +190,9 @@ export default function Orders() {
       setLocalLoading(false);
     }
   };
-
   const handleDownloadOrder = async (order: any) => {
     try {
       console.log('⬇️ Iniciando download do pedido:', order.id);
-      
       if (!order.pdf_gerado_url) {
         console.log('❌ PDF não encontrado para o pedido');
         toast({
@@ -213,7 +206,6 @@ export default function Orders() {
       // Extrair o caminho do arquivo da URL existente
       const urlParts = order.pdf_gerado_url.split('/');
       const pathIndex = urlParts.findIndex(part => part === 'pdfs');
-      
       if (pathIndex === -1 || pathIndex + 1 >= urlParts.length) {
         throw new Error('URL do PDF inválida');
       }
@@ -223,15 +215,15 @@ export default function Orders() {
       console.log('📂 Caminho do arquivo:', filePath);
 
       // Gerar nova URL assinada (válida por 1 hora)
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-        .from('pdfs')
-        .createSignedUrl(filePath, 3600); // 1 hora
+      const {
+        data: signedUrlData,
+        error: signedUrlError
+      } = await supabase.storage.from('pdfs').createSignedUrl(filePath, 3600); // 1 hora
 
       if (signedUrlError) {
         console.error('❌ Erro ao gerar URL assinada:', signedUrlError);
         throw new Error(`Erro ao gerar URL: ${signedUrlError.message}`);
       }
-
       console.log('🔗 Nova URL assinada gerada');
 
       // Fazer download usando a nova URL assinada
@@ -242,17 +234,15 @@ export default function Orders() {
           'Accept': 'application/pdf'
         }
       });
-      
       if (!response.ok) {
         throw new Error(`Erro ${response.status}: ${response.statusText}`);
       }
-
       const blob = await response.blob();
       console.log('✅ PDF baixado, tamanho:', blob.size, 'bytes');
 
       // Criar URL para download
       const url = URL.createObjectURL(blob);
-      
+
       // Criar link de download
       const link = document.createElement('a');
       link.href = url;
@@ -261,10 +251,9 @@ export default function Orders() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       // Limpar URL após um breve delay
       setTimeout(() => URL.revokeObjectURL(url), 100);
-
       toast({
         title: "Download iniciado",
         description: `PDF do pedido ${order.id} está sendo baixado.`
@@ -278,7 +267,6 @@ export default function Orders() {
       });
     }
   };
-
   const handleDeleteOrder = async (orderId: string) => {
     try {
       await deleteOrder(orderId);
@@ -294,7 +282,6 @@ export default function Orders() {
       });
     }
   };
-
   const handleViewOrder = async (order: any) => {
     try {
       setLocalLoading(true);
@@ -349,21 +336,15 @@ export default function Orders() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {localLoading && orders.length === 0 ? (
-                  <TableRow>
+                {localLoading && orders.length === 0 ? <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       Carregando pedidos...
                     </TableCell>
-                  </TableRow>
-                ) : filteredOrders.length === 0 ? (
-                  <TableRow>
+                  </TableRow> : filteredOrders.length === 0 ? <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       {orders.length === 0 ? "Nenhum pedido encontrado" : "Nenhum resultado para a busca"}
                     </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredOrders.map(order => (
-                    <TableRow key={order.id} className="hover:bg-muted/30 border-b">
+                  </TableRow> : filteredOrders.map(order => <TableRow key={order.id} className="hover:bg-muted/30 border-b">
                       <TableCell className="w-12">
                         <input type="checkbox" className="w-4 h-4 rounded border border-input bg-background" />
                       </TableCell>
@@ -371,9 +352,7 @@ export default function Orders() {
                          <div className="flex items-center gap-2">
                            <span>{order.id}</span>
                            {/* Destacar pedidos criados recentemente */}
-                           {new Date(order.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000) && (
-                             <Badge variant="secondary" className="text-xs">Novo</Badge>
-                           )}
+                           {new Date(order.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000) && <Badge variant="secondary" className="text-xs">Novo</Badge>}
                          </div>
                        </TableCell>
                       <TableCell className="text-muted-foreground">
@@ -386,37 +365,15 @@ export default function Orders() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 w-8 p-0" 
-                            title="Visualizar pedido"
-                            onClick={() => handleViewOrder(order)}
-                          >
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Visualizar pedido" onClick={() => handleViewOrder(order)}>
                             <Eye className="h-4 w-4" />
                           </Button>
                           
-                          {order.pdf_gerado_url ? (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 w-8 p-0 text-green-600" 
-                              title="Baixar PDF salvo"
-                              onClick={() => handleDownloadOrder(order)}
-                            >
+                          {order.pdf_gerado_url ? <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-green-600" title="Baixar PDF salvo" onClick={() => handleDownloadOrder(order)}>
                               <Download className="h-4 w-4" />
-                            </Button>
-                          ) : (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 w-8 p-0" 
-                              title="Imprimir pedido"
-                              onClick={() => handlePrintOrder(order)}
-                            >
+                            </Button> : <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Imprimir pedido" onClick={() => handlePrintOrder(order)}>
                               <Printer className="h-4 w-4" />
-                            </Button>
-                          )}
+                            </Button>}
                           
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -441,9 +398,7 @@ export default function Orders() {
                           </AlertDialog>
                         </div>
                       </TableCell>
-                    </TableRow>
-                  ))
-                )}
+                    </TableRow>)}
               </TableBody>
             </Table>
           </div>
@@ -457,8 +412,7 @@ export default function Orders() {
             <DialogTitle>Detalhes do Pedido #{selectedOrder?.id}</DialogTitle>
           </DialogHeader>
           
-          {selectedOrder && (
-            <div className="space-y-6">
+          {selectedOrder && <div className="space-y-6">
               {/* Cabeçalho do Pedido */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
                 <div>
@@ -469,12 +423,7 @@ export default function Orders() {
                   <h3 className="font-semibold text-sm text-muted-foreground">Data</h3>
                   <p>{new Date(selectedOrder.created_at).toLocaleDateString('pt-BR')}</p>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-sm text-muted-foreground">Status</h3>
-                  <Badge className={getStatusColor(selectedOrder.status)}>
-                    {selectedOrder.status}
-                  </Badge>
-                </div>
+                
               </div>
 
               {/* Dados do Cliente */}
@@ -497,12 +446,10 @@ export default function Orders() {
                     <p className="text-sm text-muted-foreground">CPF/CNPJ</p>
                     <p className="font-medium">{selectedOrder.cliente?.cpf_cnpj || 'N/A'}</p>
                   </div>
-                  {selectedOrder.cliente?.endereco && (
-                    <div className="md:col-span-2">
+                  {selectedOrder.cliente?.endereco && <div className="md:col-span-2">
                       <p className="text-sm text-muted-foreground">Endereço</p>
                       <p className="font-medium">{selectedOrder.cliente.endereco}</p>
-                    </div>
-                  )}
+                    </div>}
                 </div>
               </Card>
 
@@ -513,10 +460,7 @@ export default function Orders() {
                   <div>
                     <p className="text-sm text-muted-foreground">Marca/Modelo</p>
                     <p className="font-medium">
-                      {selectedOrder.veiculo ? 
-                        `${selectedOrder.veiculo.marca} ${selectedOrder.veiculo.modelo}` : 
-                        'N/A'
-                      }
+                      {selectedOrder.veiculo ? `${selectedOrder.veiculo.marca} ${selectedOrder.veiculo.modelo}` : 'N/A'}
                     </p>
                   </div>
                   <div>
@@ -549,9 +493,7 @@ export default function Orders() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {selectedOrder.produtos && selectedOrder.produtos.length > 0 ? (
-                        selectedOrder.produtos.map((produto: any, index: number) => (
-                          <TableRow key={index}>
+                      {selectedOrder.produtos && selectedOrder.produtos.length > 0 ? selectedOrder.produtos.map((produto: any, index: number) => <TableRow key={index}>
                             <TableCell>{produto.descricao}</TableCell>
                             <TableCell className="text-center">{produto.quantidade}</TableCell>
                             <TableCell className="text-right">
@@ -561,29 +503,20 @@ export default function Orders() {
                               R$ {(produto.valor_total || 0).toFixed(2).replace('.', ',')}
                             </TableCell>
                             <TableCell>
-                              {produto.instaladores?.nome ? (
-                                <Badge variant="secondary" className="text-xs">
+                              {produto.instaladores?.nome ? <Badge variant="secondary" className="text-xs">
                                   {produto.instaladores.nome}
-                                </Badge>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">Não atribuído</span>
-                              )}
+                                </Badge> : <span className="text-xs text-muted-foreground">Não atribuído</span>}
                             </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
+                          </TableRow>) : <TableRow>
                           <TableCell colSpan={5} className="text-center text-muted-foreground">
                             Nenhum produto encontrado
                           </TableCell>
-                        </TableRow>
-                      )}
+                        </TableRow>}
                     </TableBody>
                   </Table>
                 </div>
                 
-                {selectedOrder.produtos && selectedOrder.produtos.length > 0 && (
-                  <div className="mt-4 pt-4 border-t">
+                {selectedOrder.produtos && selectedOrder.produtos.length > 0 && <div className="mt-4 pt-4 border-t">
                     <div className="flex justify-end">
                       <div className="text-right">
                         <p className="text-sm text-muted-foreground">Valor Total</p>
@@ -592,8 +525,7 @@ export default function Orders() {
                         </p>
                       </div>
                     </div>
-                  </div>
-                )}
+                  </div>}
               </Card>
 
               {/* Responsáveis */}
@@ -607,34 +539,25 @@ export default function Orders() {
                 </div>
                 
                 {/* Instaladores por Produto */}
-                {selectedOrder.produtos && selectedOrder.produtos.some((p: any) => p.instaladores?.nome) && (
-                  <div className="mt-4 pt-4 border-t">
+                {selectedOrder.produtos && selectedOrder.produtos.some((p: any) => p.instaladores?.nome) && <div className="mt-4 pt-4 border-t">
                     <h4 className="font-medium mb-2 text-sm text-muted-foreground">Instaladores Atribuídos</h4>
                     <div className="space-y-2">
-                      {selectedOrder.produtos
-                        .filter((produto: any) => produto.instaladores?.nome)
-                        .map((produto: any, index: number) => (
-                          <div key={index} className="flex items-center justify-between text-sm">
+                      {selectedOrder.produtos.filter((produto: any) => produto.instaladores?.nome).map((produto: any, index: number) => <div key={index} className="flex items-center justify-between text-sm">
                             <span className="text-muted-foreground">{produto.descricao}</span>
                             <Badge variant="secondary" className="text-xs">
                               {produto.instaladores.nome}
                             </Badge>
-                          </div>
-                        ))}
+                          </div>)}
                     </div>
-                  </div>
-                )}
+                  </div>}
               </Card>
 
               {/* Observações */}
-              {selectedOrder.observacoes && (
-                <Card className="p-4">
+              {selectedOrder.observacoes && <Card className="p-4">
                   <h3 className="font-semibold mb-3">Observações</h3>
                   <p className="text-muted-foreground">{selectedOrder.observacoes}</p>
-                </Card>
-              )}
-            </div>
-          )}
+                </Card>}
+            </div>}
         </DialogContent>
       </Dialog>
     </div>;
