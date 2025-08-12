@@ -53,10 +53,10 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md p-8 space-y-6">
+    <main className="min-h-screen flex items-start justify-center bg-background p-4 pt-10 sm:pt-16 md:pt-24">
+      <Card className="w-full max-w-md p-6 md:p-8 space-y-4 md:space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-semibold text-foreground">Bem-vindo</h1>
+          <h1 className="text-2xl md:text-3xl font-semibold text-foreground">Bem-vindo</h1>
           <p className="text-muted-foreground">
             Acesse sua conta
           </p>
@@ -123,6 +123,6 @@ export default function Auth() {
           </p>
         </div>
       </Card>
-    </div>
+    </main>
   );
 }
