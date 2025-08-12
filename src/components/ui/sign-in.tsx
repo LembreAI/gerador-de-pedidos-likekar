@@ -23,19 +23,21 @@ export function LightLogin({
   onToggleShowPassword,
   onSubmit
 }: LightLoginProps) {
-  return <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(var(--muted))] to-[hsl(var(--background))] p-4">
-      <div className="w-full max-w-md bg-card rounded-2xl shadow-xl overflow-hidden border border-border relative">
+  return <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(var(--muted))] to-[hsl(var(--background))] p-4 sm:p-6">
+      <div className="w-full max-w-sm sm:max-w-md bg-card rounded-2xl shadow-xl overflow-hidden border border-border relative">
         <div className="absolute top-0 left-0 right-0 h-48 bg-gradient-to-b from-[hsl(var(--primary))/0.15] via-[hsl(var(--primary))/0.08] to-transparent opacity-60 blur-3xl -mt-20 pointer-events-none" />
-        <div className="p-8">
-          <div className="flex flex-col items-center mb-8">
-            <div className="bg-background p-4 rounded-2xl shadow-lg mb-6 text-primary">
-              <svg width="48" height="48" viewBox="0 0 110 106" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                <path d="M100.83 28.63L66.86 3.95c-7.25-5.26-17.07-5.26-24.35 0L8.54 28.63C1.29 33.89-1.76 43.23 1.01 51.77l12.98 39.93c2.77 8.53 10.72 14.3 19.7 14.3h41.97c8.98 0 16.93-5.76 19.7-14.3l12.98-39.93c2.77-8.53-.28-17.88-7.53-23.14ZM64.81 63.13l-10.13 18.55-10.13-18.55-18.55-10.13 18.55-10.13 10.13-18.55 10.13 18.55 18.55 10.13-18.55 10.13Z" />
-              </svg>
+        <div className="p-6 sm:p-8">
+          <div className="flex flex-col items-center mb-6 sm:mb-8">
+            <div className="bg-background p-3 sm:p-4 rounded-2xl shadow-lg mb-4 sm:mb-6">
+              <img
+                src="/lovable-uploads/3191f51b-98c4-404b-9b91-5ed9916742ba.png"
+                alt="Logo LK"
+                className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
+              />
             </div>
             <div className="p-0">
-              <h2 className="text-2xl font-bold text-foreground text-center">Bem-vindo de volta</h2>
-              <p className="text-center text-muted-foreground mt-2">Entre para continuar</p>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground text-center">Bem-vindo de volta</h2>
+              <p className="text-center text-muted-foreground mt-2 text-sm sm:text-base">Entre para continuar</p>
             </div>
           </div>
 
