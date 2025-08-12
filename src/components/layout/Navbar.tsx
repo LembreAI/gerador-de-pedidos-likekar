@@ -108,7 +108,7 @@ export function Navbar() {
           {/* Logo and Brand */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div className="flex items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
-              <img src="/lovable-uploads/aaa139a5-5b84-4487-9488-0d3aed4ffcde.png" alt="Like Kar Logo" className="h-5 w-5 sm:h-6 sm:w-6 object-contain" />
+              <img src="/lovable-uploads/596baeca-613a-4cc6-9810-7d6298e72283.png" alt="Logo Like Kar (LK)" className="h-5 w-5 sm:h-6 sm:w-6 object-contain" loading="lazy" />
             </div>
             <div className="min-w-0">
               <h1 className="text-sm sm:text-lg font-bold text-foreground tracking-tight truncate">
