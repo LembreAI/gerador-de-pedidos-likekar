@@ -172,9 +172,8 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
               isCollapsed ? "h-10 w-10" : "h-12 w-12"
             )}>
               <img 
-                src="/lovable-uploads/596baeca-613a-4cc6-9810-7d6298e72283.png" 
-                alt="Logo Like Kar (LK)" 
-                loading="lazy"
+                src="/lovable-uploads/aaa139a5-5b84-4487-9488-0d3aed4ffcde.png" 
+                alt="Like Kar Logo" 
                 className={cn(
                   "object-contain transition-all duration-300",
                   isCollapsed ? "h-6 w-6" : "h-8 w-8"
