@@ -9,44 +9,41 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-
 export default function ClientDetails() {
-  const { id } = useParams();
+  const {
+    id
+  } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [client, setClient] = useState<any>(null);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    setMounted(true)
+    setMounted(true);
     if (id) {
       loadClientData();
     }
   }, [id]);
-
   const loadClientData = async () => {
     try {
       setLoading(true);
-      
-      // Load client data
-      const { data: clientData, error: clientError } = await supabase
-        .from('clientes')
-        .select('*')
-        .eq('id', id)
-        .single();
 
+      // Load client data
+      const {
+        data: clientData,
+        error: clientError
+      } = await supabase.from('clientes').select('*').eq('id', id).single();
       if (clientError) throw clientError;
 
       // Load client's vehicles
-      const { data: vehiclesData, error: vehiclesError } = await supabase
-        .from('veiculos')
-        .select('*')
-        .eq('cliente_id', id);
-
+      const {
+        data: vehiclesData,
+        error: vehiclesError
+      } = await supabase.from('veiculos').select('*').eq('cliente_id', id);
       if (vehiclesError) throw vehiclesError;
-
       setClient(clientData);
       setVehicles(vehiclesData || []);
     } catch (error) {
@@ -63,44 +60,39 @@ export default function ClientDetails() {
 
   // SEO: título e descrição
   useEffect(() => {
-    if (!mounted) return
-    const titleBase = client?.nome ? `Cliente: ${client.nome} | Detalhes` : 'Detalhes do Cliente'
-    document.title = `${titleBase} — Sistema`
+    if (!mounted) return;
+    const titleBase = client?.nome ? `Cliente: ${client.nome} | Detalhes` : 'Detalhes do Cliente';
+    document.title = `${titleBase} — Sistema`;
 
     // Meta description
-    const desc = client?.email || client?.telefone || 'Detalhes do cliente e seus veículos'
-    let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null
+    const desc = client?.email || client?.telefone || 'Detalhes do cliente e seus veículos';
+    let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
     if (!meta) {
-      meta = document.createElement('meta')
-      meta.name = 'description'
-      document.head.appendChild(meta)
+      meta = document.createElement('meta');
+      meta.name = 'description';
+      document.head.appendChild(meta);
     }
-    meta.content = `${titleBase}. ${desc}`
+    meta.content = `${titleBase}. ${desc}`;
 
     // Canonical
-    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null
+    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
     if (!link) {
-      link = document.createElement('link')
-      link.rel = 'canonical'
-      document.head.appendChild(link)
+      link = document.createElement('link');
+      link.rel = 'canonical';
+      document.head.appendChild(link);
     }
-    link.href = window.location.href
-  }, [client, mounted])
-
+    link.href = window.location.href;
+  }, [client, mounted]);
   const handleDeleteClient = async () => {
     try {
-      const { error } = await supabase
-        .from('clientes')
-        .delete()
-        .eq('id', id);
-
+      const {
+        error
+      } = await supabase.from('clientes').delete().eq('id', id);
       if (error) throw error;
-
       toast({
         title: "Cliente excluído",
         description: "Cliente foi removido com sucesso."
       });
-
       navigate('/clientes');
     } catch (error) {
       console.error('Error deleting client:', error);
@@ -111,16 +103,10 @@ export default function ClientDetails() {
       });
     }
   };
-
   if (loading) {
-    return (
-      <div className="space-y-6">
+    return <div className="space-y-6">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/clientes')}
-            className="flex items-center gap-2"
-          >
+          <Button variant="ghost" onClick={() => navigate('/clientes')} className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </Button>
@@ -128,19 +114,12 @@ export default function ClientDetails() {
         <Card className="p-8 text-center">
           <p className="text-muted-foreground">Carregando dados do cliente...</p>
         </Card>
-      </div>
-    );
+      </div>;
   }
-
   if (!client) {
-    return (
-      <div className="space-y-6">
+    return <div className="space-y-6">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/clientes')}
-            className="flex items-center gap-2"
-          >
+          <Button variant="ghost" onClick={() => navigate('/clientes')} className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </Button>
@@ -148,43 +127,23 @@ export default function ClientDetails() {
         <Card className="p-8 text-center">
           <p className="text-muted-foreground">Cliente não encontrado</p>
         </Card>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Modern Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => navigate('/clientes')}
-            className="flex items-center gap-2"
-          >
+          <Button variant="ghost" size="sm" onClick={() => navigate('/clientes')} className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </Button>
           <div>
             <h1 className="text-2xl font-semibold text-foreground">{client.nome}</h1>
-            <p className="text-muted-foreground flex items-center gap-4 mt-1">
-              <span className="flex items-center gap-1">
-                <Phone className="h-4 w-4" />
-                {client.telefone}
-              </span>
-              <span className="flex items-center gap-1">
-                <Car className="h-4 w-4" />
-                {vehicles.length} {vehicles.length === 1 ? 'veículo' : 'veículos'}
-              </span>
-            </p>
+            
           </div>
         </div>
         <div className="flex gap-2">
-          <Button 
-            onClick={() => navigate(`/cliente/${id}/editar`)} 
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
+          <Button onClick={() => navigate(`/cliente/${id}/editar`)} className="bg-primary text-primary-foreground hover:bg-primary/90">
             <Edit className="h-4 w-4 mr-2" />
             Editar
           </Button>
@@ -204,10 +163,7 @@ export default function ClientDetails() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={handleDeleteClient} 
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
+                <AlertDialogAction onClick={handleDeleteClient} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                   Excluir
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -244,8 +200,7 @@ export default function ClientDetails() {
                 </div>
 
                 {/* Email */}
-                {client.email && (
-                  <div className="space-y-2">
+                {client.email && <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-primary" />
                       <Label className="font-medium">E-mail</Label>
@@ -253,12 +208,10 @@ export default function ClientDetails() {
                     <div className="bg-muted/30 p-3 rounded-md">
                       <p className="font-medium break-all">{client.email}</p>
                     </div>
-                  </div>
-                )}
+                  </div>}
 
                 {/* CPF/CNPJ */}
-                {client.cpf_cnpj && (
-                  <div className="space-y-2 md:col-span-2">
+                {client.cpf_cnpj && <div className="space-y-2 md:col-span-2">
                     <div className="flex items-center gap-2">
                       <CreditCard className="h-4 w-4 text-primary" />
                       <Label className="font-medium">CPF/CNPJ</Label>
@@ -266,13 +219,11 @@ export default function ClientDetails() {
                     <div className="bg-muted/30 p-3 rounded-md">
                       <p className="font-mono font-medium break-all">{client.cpf_cnpj}</p>
                     </div>
-                  </div>
-                )}
+                  </div>}
               </div>
 
               {/* Endereço - Seção Separada */}
-              {client.endereco && (
-                <>
+              {client.endereco && <>
                   <Separator />
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
@@ -283,8 +234,7 @@ export default function ClientDetails() {
                       <p className="leading-relaxed">{client.endereco}</p>
                     </div>
                   </div>
-                </>
-              )}
+                </>}
             </CardContent>
           </Card>
         </div>
@@ -296,9 +246,7 @@ export default function ClientDetails() {
             <h2 className="text-lg font-medium">Veículos</h2>
           </div>
           
-          {vehicles.length > 0 ? (
-            vehicles.map((vehicle) => (
-              <Card key={vehicle.id} className="border">
+          {vehicles.length > 0 ? vehicles.map(vehicle => <Card key={vehicle.id} className="border">
                 <CardContent className="p-4">
                   <div className="space-y-3">
                     {/* Header do Veículo */}
@@ -318,46 +266,33 @@ export default function ClientDetails() {
                         <p className="font-medium">{vehicle.ano}</p>
                       </div>
                       
-                      {vehicle.placa && (
-                        <div>
+                      {vehicle.placa && <div>
                           <span className="text-muted-foreground">Placa</span>
                           <p className="font-mono font-medium">{vehicle.placa}</p>
-                        </div>
-                      )}
+                        </div>}
                       
-                      {vehicle.cor && (
-                        <div className="col-span-2">
+                      {vehicle.cor && <div className="col-span-2">
                           <div className="flex items-center gap-1">
                             <Palette className="h-3 w-3 text-muted-foreground" />
                             <span className="text-muted-foreground">Cor</span>
                           </div>
                           <p className="font-medium">{vehicle.cor}</p>
-                        </div>
-                      )}
+                        </div>}
                     </div>
                   </div>
                 </CardContent>
-              </Card>
-            ))
-          ) : (
-            <Card className="border">
+              </Card>) : <Card className="border">
               <CardContent className="p-6 text-center">
                 <Car className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground mb-4">
                   Nenhum veículo cadastrado
                 </p>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => navigate(`/cliente/${id}/editar`)}
-                >
+                <Button variant="outline" size="sm" onClick={() => navigate(`/cliente/${id}/editar`)}>
                   Cadastrar Veículo
                 </Button>
               </CardContent>
-            </Card>
-          )}
+            </Card>}
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
