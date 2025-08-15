@@ -12,6 +12,8 @@ import { generateLikeKarPDF, PedidoData } from "@/services/likeKarPDFGenerator";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileOrderCard } from "@/components/mobile/MobileOrderCard";
 const getStatusColor = (status: string) => {
   switch (status) {
     case "Concluído":
@@ -24,6 +26,155 @@ const getStatusColor = (status: string) => {
       return "bg-gray-100 text-gray-800 border-gray-200";
   }
 };
+// Mobile/Desktop Component Switch
+function OrdersListSection({ 
+  localLoading, 
+  orders, 
+  filteredOrders, 
+  handleViewOrder, 
+  handlePrintOrder, 
+  handleDownloadOrder, 
+  handleDeleteOrder 
+}: any) {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <div className="space-y-3">
+        {localLoading && orders.length === 0 ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Card key={index} className="p-4 space-y-3">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-muted rounded w-1/3 mb-2"></div>
+                  <div className="h-3 bg-muted rounded w-1/2 mb-3"></div>
+                  <div className="h-3 bg-muted rounded w-2/3"></div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : filteredOrders.length === 0 ? (
+          <Card className="p-8 text-center">
+            <p className="text-muted-foreground">
+              {orders.length === 0 ? "Nenhum pedido encontrado" : "Nenhum resultado para a busca"}
+            </p>
+          </Card>
+        ) : (
+          filteredOrders.map((order: any) => (
+            <MobileOrderCard
+              key={order.id}
+              order={order}
+              onView={handleViewOrder}
+              onPrint={handlePrintOrder}
+              onDownload={handleDownloadOrder}
+              onDelete={handleDeleteOrder}
+            />
+          ))
+        )}
+      </div>
+    );
+  }
+
+  // Desktop Table View
+  return (
+    <Card className="border">
+      <div className="p-0">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-b bg-muted/30">
+                <TableHead className="w-12"></TableHead>
+                <TableHead className="font-medium text-muted-foreground">Número</TableHead>
+                <TableHead className="font-medium text-muted-foreground">Data</TableHead>
+                <TableHead className="font-medium text-muted-foreground">Cliente</TableHead>
+                <TableHead className="font-medium text-muted-foreground">Telefone</TableHead>
+                <TableHead className="font-medium text-muted-foreground">Carro</TableHead>
+                <TableHead className="text-right font-medium text-muted-foreground">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {localLoading && orders.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    Carregando pedidos...
+                  </TableCell>
+                </TableRow>
+              ) : filteredOrders.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    {orders.length === 0 ? "Nenhum pedido encontrado" : "Nenhum resultado para a busca"}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredOrders.map((order: any) => (
+                  <TableRow key={order.id} className="hover:bg-muted/30 border-b">
+                    <TableCell className="w-12"></TableCell>
+                    <TableCell className="font-medium text-foreground">
+                      <div className="flex items-center gap-2">
+                        <span>{order.id}</span>
+                        {new Date(order.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000) && (
+                          <Badge variant="secondary" className="text-xs">Novo</Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {new Date(order.created_at).toLocaleDateString('pt-BR')}
+                    </TableCell>
+                    <TableCell className="text-foreground">{order.cliente?.nome || 'N/A'}</TableCell>
+                    <TableCell className="text-muted-foreground">{order.cliente?.telefone || 'N/A'}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {order.veiculo ? `${order.veiculo.marca} ${order.veiculo.modelo} ${order.veiculo.ano}` : 'N/A'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Visualizar pedido" onClick={() => handleViewOrder(order)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        
+                        {order.pdf_gerado_url ? (
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-green-600" title="Baixar PDF salvo" onClick={() => handleDownloadOrder(order)}>
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Imprimir pedido" onClick={() => handlePrintOrder(order)}>
+                            <Printer className="h-4 w-4" />
+                          </Button>
+                        )}
+                        
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" title="Excluir">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja excluir o pedido {order.id}? Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteOrder(order.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export default function Orders() {
   const {
     orders,
@@ -319,91 +470,16 @@ export default function Orders() {
         </div>
       </Card>
 
-      {/* Orders Table */}
-      <Card className="border">
-        <div className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b bg-muted/30">
-                  <TableHead className="w-12"></TableHead>
-                  <TableHead className="font-medium text-muted-foreground">Número</TableHead>
-                  <TableHead className="font-medium text-muted-foreground">Data</TableHead>
-                  <TableHead className="font-medium text-muted-foreground">Cliente</TableHead>
-                  <TableHead className="font-medium text-muted-foreground">Telefone</TableHead>
-                  <TableHead className="font-medium text-muted-foreground">Carro</TableHead>
-                  <TableHead className="text-right font-medium text-muted-foreground">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {localLoading && orders.length === 0 ? <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      Carregando pedidos...
-                    </TableCell>
-                  </TableRow> : filteredOrders.length === 0 ? <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      {orders.length === 0 ? "Nenhum pedido encontrado" : "Nenhum resultado para a busca"}
-                    </TableCell>
-                  </TableRow> : filteredOrders.map(order => <TableRow key={order.id} className="hover:bg-muted/30 border-b">
-                      <TableCell className="w-12">
-                        
-                      </TableCell>
-                       <TableCell className="font-medium text-foreground">
-                         <div className="flex items-center gap-2">
-                           <span>{order.id}</span>
-                           {/* Destacar pedidos criados recentemente */}
-                           {new Date(order.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000) && <Badge variant="secondary" className="text-xs">Novo</Badge>}
-                         </div>
-                       </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {new Date(order.created_at).toLocaleDateString('pt-BR')}
-                      </TableCell>
-                      <TableCell className="text-foreground">{order.cliente?.nome || 'N/A'}</TableCell>
-                      <TableCell className="text-muted-foreground">{order.cliente?.telefone || 'N/A'}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {order.veiculo ? `${order.veiculo.marca} ${order.veiculo.modelo} ${order.veiculo.ano}` : 'N/A'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Visualizar pedido" onClick={() => handleViewOrder(order)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          
-                          {order.pdf_gerado_url ? <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-green-600" title="Baixar PDF salvo" onClick={() => handleDownloadOrder(order)}>
-                              <Download className="h-4 w-4" />
-                            </Button> : <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Imprimir pedido" onClick={() => handlePrintOrder(order)}>
-                              <Printer className="h-4 w-4" />
-                            </Button>}
-                          
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" title="Excluir">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Tem certeza que deseja excluir o pedido {order.id}? Esta ação não pode ser desfeita.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteOrder(order.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                  Excluir
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>)}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      </Card>
+      {/* Orders Table/Cards */}
+      <OrdersListSection 
+        localLoading={localLoading}
+        orders={orders}
+        filteredOrders={filteredOrders}
+        handleViewOrder={handleViewOrder}
+        handlePrintOrder={handlePrintOrder}
+        handleDownloadOrder={handleDownloadOrder}
+        handleDeleteOrder={handleDeleteOrder}
+      />
 
       {/* Modal de Visualização do Pedido */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>

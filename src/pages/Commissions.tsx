@@ -130,8 +130,64 @@ export default function Commissions() {
         </div>
       </div>
 
-      {/* Cards de Resumo */}
-      
+      {/* Cards de Resumo - Mobile Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              Total Comissões
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg sm:text-2xl font-bold text-green-600">
+              {formatCurrency(summary?.total_comissoes || 0)}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Vendedores
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg sm:text-2xl font-bold">
+              {vendedoresComissoes.length}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Instaladores
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg sm:text-2xl font-bold">
+              {installadoresComissoes.length}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Total Trabalhos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg sm:text-2xl font-bold">
+              {vendedoresComissoes.reduce((sum, v) => sum + v.total_vendas, 0) + installadoresComissoes.reduce((sum, i) => sum + i.total_instalacoes, 0)}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Lista de Funcionários */}
       <Card>

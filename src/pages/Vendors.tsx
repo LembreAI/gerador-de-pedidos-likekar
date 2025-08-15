@@ -8,6 +8,136 @@ import { useVendedores } from "@/contexts/VendedoresContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { VendedorForm } from "@/components/forms/VendedorForm";
 import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileVendorCard } from "@/components/mobile/MobileVendorCard";
+// Mobile/Desktop Component Switch
+function VendorsListSection({ 
+  loading, 
+  filteredVendedores, 
+  searchTerm,
+  handleEdit,
+  handleDelete,
+  getInitials
+}: any) {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <div className="space-y-3">
+        {loading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Card key={index} className="p-4 space-y-3">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-muted rounded w-1/3 mb-2"></div>
+                  <div className="h-3 bg-muted rounded w-1/2 mb-3"></div>
+                  <div className="h-3 bg-muted rounded w-2/3"></div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : filteredVendedores.length === 0 ? (
+          <Card className="p-8 text-center">
+            <p className="text-muted-foreground">
+              {searchTerm ? "Nenhum vendedor encontrado" : "Nenhum vendedor cadastrado"}
+            </p>
+          </Card>
+        ) : (
+          filteredVendedores.map((vendedor: any) => (
+            <MobileVendorCard
+              key={vendedor.id}
+              vendor={vendedor}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          ))
+        )}
+      </div>
+    );
+  }
+
+  // Desktop Table View
+  return (
+    <Card className="border">
+      <div className="p-0">
+        <div className="overflow-x-auto">
+          <div className="min-w-full">
+            <div className="border-b bg-muted/30 flex p-4">
+              <div className="flex-1 font-medium text-muted-foreground">Vendedor</div>
+              <div className="w-32 font-medium text-muted-foreground">Comissão</div>
+              <div className="w-32 text-right font-medium text-muted-foreground">Ações</div>
+            </div>
+            
+            <div className="divide-y">
+              {loading ? (
+                Array.from({ length: 3 }).map((_, index) => (
+                  <div key={index} className="flex items-center p-4 hover:bg-muted/30">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                        <div>
+                          <Skeleton className="h-4 w-32 mb-2" />
+                          <Skeleton className="h-3 w-48" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="w-32">
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                    <div className="w-32 text-right">
+                      <div className="flex justify-end gap-1">
+                        <Skeleton className="h-8 w-8" />
+                        <Skeleton className="h-8 w-8" />
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : filteredVendedores.length === 0 ? (
+                <div className="p-8 text-center">
+                  <p className="text-muted-foreground">
+                    {searchTerm ? "Nenhum vendedor encontrado" : "Nenhum vendedor cadastrado"}
+                  </p>
+                </div>
+              ) : (
+                filteredVendedores.map((vendedor: any) => (
+                  <div key={vendedor.id} className="flex items-center p-4 hover:bg-muted/30 border-b">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10 bg-muted">
+                          <AvatarFallback className="text-primary font-medium text-sm">
+                            {getInitials(vendedor.nome)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-foreground">{vendedor.nome}</p>
+                          <p className="text-sm text-muted-foreground">{vendedor.email}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="w-32 text-muted-foreground">
+                      {vendedor.comissao ? `${vendedor.comissao}%` : "5%"}
+                    </div>
+                    <div className="w-32 text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Editar" onClick={() => handleEdit(vendedor)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" title="Excluir" onClick={() => handleDelete(vendedor.id, vendedor.nome)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export default function Vendors() {
   const {
     vendedores,
@@ -69,78 +199,15 @@ export default function Vendors() {
         </div>
       </Card>
 
-      {/* Vendors Table */}
-      <Card className="border">
-        <div className="p-0">
-          <div className="overflow-x-auto">
-            <div className="min-w-full">
-              <div className="border-b bg-muted/30 flex p-4">
-                <div className="flex-1 font-medium text-muted-foreground">Vendedor</div>
-                <div className="w-32 font-medium text-muted-foreground">Comissão</div>
-                <div className="w-32 text-right font-medium text-muted-foreground">Ações</div>
-              </div>
-              
-              <div className="divide-y">
-                {loading ?
-              // Loading skeleton
-              Array.from({
-                length: 3
-              }).map((_, index) => <div key={index} className="flex items-center p-4 hover:bg-muted/30">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <Skeleton className="h-10 w-10 rounded-full" />
-                          <div>
-                            <Skeleton className="h-4 w-32 mb-2" />
-                            <Skeleton className="h-3 w-48" />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="w-32">
-                        <Skeleton className="h-4 w-24" />
-                      </div>
-                      <div className="w-32 text-right">
-                        <div className="flex justify-end gap-1">
-                          <Skeleton className="h-8 w-8" />
-                          <Skeleton className="h-8 w-8" />
-                        </div>
-                      </div>
-                    </div>) : filteredVendedores.length === 0 ? <div className="p-8 text-center">
-                    <p className="text-muted-foreground">
-                      {searchTerm ? "Nenhum vendedor encontrado" : "Nenhum vendedor cadastrado"}
-                    </p>
-                  </div> : filteredVendedores.map(vendedor => <div key={vendedor.id} className="flex items-center p-4 hover:bg-muted/30 border-b">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10 bg-muted">
-                            <AvatarFallback className="text-primary font-medium text-sm">
-                              {getInitials(vendedor.nome)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium text-foreground">{vendedor.nome}</p>
-                            <p className="text-sm text-muted-foreground">{vendedor.email}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="w-32 text-muted-foreground">
-                        {vendedor.comissao ? `${vendedor.comissao}%` : "5%"}
-                      </div>
-                      <div className="w-32 text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Editar" onClick={() => handleEdit(vendedor)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" title="Excluir" onClick={() => handleDelete(vendedor.id, vendedor.nome)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>)}
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
+      {/* Vendors Table/Cards */}
+      <VendorsListSection 
+        loading={loading}
+        filteredVendedores={filteredVendedores}
+        searchTerm={searchTerm}
+        handleEdit={handleEdit}
+        handleDelete={handleDelete}
+        getInitials={getInitials}
+      />
       
       <VendedorForm open={showForm} onOpenChange={handleCloseForm} vendedor={editingVendedor} />
     </div>;

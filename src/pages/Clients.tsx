@@ -9,6 +9,168 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileClientCard } from "@/components/mobile/MobileClientCard";
+// Mobile/Desktop Component Switch
+function ClientsListSection({ 
+  localLoading, 
+  clientes, 
+  filteredClientes, 
+  selectedClientes,
+  handleSelectAll,
+  handleSelectCliente,
+  handleDeleteCliente
+}: any) {
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
+
+  if (isMobile) {
+    return (
+      <div className="space-y-3">
+        {/* Mobile Select All */}
+        <Card className="p-3">
+          <div className="flex items-center gap-2">
+            <Checkbox 
+              checked={filteredClientes.length > 0 && selectedClientes.length === filteredClientes.length} 
+              onCheckedChange={handleSelectAll} 
+            />
+            <span className="text-sm text-muted-foreground">
+              Selecionar todos ({selectedClientes.length} selecionados)
+            </span>
+          </div>
+        </Card>
+
+        {localLoading && clientes.length === 0 ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Card key={index} className="p-4 space-y-3">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-muted rounded w-1/3 mb-2"></div>
+                  <div className="h-3 bg-muted rounded w-1/2 mb-3"></div>
+                  <div className="h-3 bg-muted rounded w-2/3"></div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : filteredClientes.length === 0 ? (
+          <Card className="p-8 text-center">
+            <p className="text-muted-foreground">
+              {clientes.length === 0 ? "Nenhum cliente encontrado" : "Nenhum resultado para a busca"}
+            </p>
+          </Card>
+        ) : (
+          filteredClientes.map((cliente: any) => (
+            <MobileClientCard
+              key={cliente.id}
+              client={cliente}
+              isSelected={selectedClientes.includes(cliente.id)}
+              onSelect={handleSelectCliente}
+              onDelete={handleDeleteCliente}
+            />
+          ))
+        )}
+      </div>
+    );
+  }
+
+  // Desktop Table View
+  return (
+    <Card className="border">
+      <div className="p-0">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-b bg-muted/30">
+                <TableHead className="w-12">
+                  <Checkbox checked={filteredClientes.length > 0 && selectedClientes.length === filteredClientes.length} onCheckedChange={handleSelectAll} />
+                </TableHead>
+                <TableHead className="font-medium text-muted-foreground">Nome</TableHead>
+                <TableHead className="font-medium text-muted-foreground">Telefone</TableHead>
+                <TableHead className="font-medium text-muted-foreground">Email</TableHead>
+                <TableHead className="font-medium text-muted-foreground">Veículos</TableHead>
+                <TableHead className="text-right font-medium text-muted-foreground">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {localLoading && clientes.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    Carregando clientes...
+                  </TableCell>
+                </TableRow>
+              ) : filteredClientes.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    {clientes.length === 0 ? "Nenhum cliente encontrado" : "Nenhum resultado para a busca"}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredClientes.map((cliente: any) => (
+                  <TableRow key={cliente.id} className="hover:bg-muted/30 border-b">
+                    <TableCell className="w-12">
+                      <Checkbox checked={selectedClientes.includes(cliente.id)} onCheckedChange={(checked) => handleSelectCliente(cliente.id, checked as boolean)} />
+                    </TableCell>
+                    <TableCell className="font-medium text-foreground">{cliente.nome}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4" />
+                        {cliente.telefone || 'N/A'}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4" />
+                        {cliente.email || 'N/A'}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Car className="h-4 w-4" />
+                        {typeof cliente.veiculosCount === 'number' ? cliente.veiculosCount : cliente.veiculo ? 1 : 0}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Ver detalhes" onClick={() => navigate(`/cliente/${cliente.id}`)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Editar cliente" onClick={() => navigate(`/cliente/${cliente.id}/editar`)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" title="Excluir">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja excluir o cliente {cliente.nome}? Esta ação também removerá todos os veículos associados e não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteCliente(cliente.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export default function Clients() {
   const {
     clientes,
@@ -129,91 +291,15 @@ export default function Clients() {
         </div>
       </Card>
 
-      {/* Clients Table */}
-      <Card className="border">
-        <div className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b bg-muted/30">
-                  <TableHead className="w-12">
-                    <Checkbox checked={filteredClientes.length > 0 && selectedClientes.length === filteredClientes.length} onCheckedChange={handleSelectAll} />
-                  </TableHead>
-                  <TableHead className="font-medium text-muted-foreground">Nome</TableHead>
-                  <TableHead className="font-medium text-muted-foreground">Telefone</TableHead>
-                  <TableHead className="font-medium text-muted-foreground">Email</TableHead>
-                  <TableHead className="font-medium text-muted-foreground">Veículos</TableHead>
-                  <TableHead className="text-right font-medium text-muted-foreground">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {localLoading && clientes.length === 0 ? <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        Carregando clientes...
-                      </TableCell>
-                    </TableRow> : filteredClientes.length === 0 ? <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        {clientes.length === 0 ? "Nenhum cliente encontrado" : "Nenhum resultado para a busca"}
-                      </TableCell>
-                    </TableRow> : filteredClientes.map(cliente => <TableRow key={cliente.id} className="hover:bg-muted/30 border-b">
-                      <TableCell className="w-12">
-                        <Checkbox checked={selectedClientes.includes(cliente.id)} onCheckedChange={checked => handleSelectCliente(cliente.id, checked as boolean)} />
-                      </TableCell>
-                      <TableCell className="font-medium text-foreground">{cliente.nome}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4" />
-                          {cliente.telefone || 'N/A'}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4" />
-                          {cliente.email || 'N/A'}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                          <Car className="h-4 w-4" />
-                          {typeof cliente.veiculosCount === 'number' ? cliente.veiculosCount : cliente.veiculo ? 1 : 0}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Ver detalhes" onClick={() => navigate(`/cliente/${cliente.id}`)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Editar cliente" onClick={() => navigate(`/cliente/${cliente.id}/editar`)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" title="Excluir">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Tem certeza que deseja excluir o cliente {cliente.nome}? Esta ação também removerá todos os veículos associados e não pode ser desfeita.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteCliente(cliente.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                  Excluir
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>)}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      </Card>
+      {/* Clients Table/Cards */}
+      <ClientsListSection 
+        localLoading={localLoading}
+        clientes={clientes}
+        filteredClientes={filteredClientes}
+        selectedClientes={selectedClientes}
+        handleSelectAll={handleSelectAll}
+        handleSelectCliente={handleSelectCliente}
+        handleDeleteCliente={handleDeleteCliente}
+      />
     </div>;
 }

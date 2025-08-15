@@ -8,6 +8,136 @@ import { useInstaladores } from "@/contexts/InstalladoresContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { InstaladorForm } from "@/components/forms/InstaladorForm";
 import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileInstallerCard } from "@/components/mobile/MobileInstallerCard";
+// Mobile/Desktop Component Switch
+function InstallersListSection({ 
+  loading, 
+  filteredInstaladores, 
+  searchTerm,
+  handleEdit,
+  handleDelete,
+  getInitials
+}: any) {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <div className="space-y-3">
+        {loading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Card key={index} className="p-4 space-y-3">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-muted rounded w-1/3 mb-2"></div>
+                  <div className="h-3 bg-muted rounded w-1/2 mb-3"></div>
+                  <div className="h-3 bg-muted rounded w-2/3"></div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : filteredInstaladores.length === 0 ? (
+          <Card className="p-8 text-center">
+            <p className="text-muted-foreground">
+              {searchTerm ? "Nenhum instalador encontrado" : "Nenhum instalador cadastrado"}
+            </p>
+          </Card>
+        ) : (
+          filteredInstaladores.map((instalador: any) => (
+            <MobileInstallerCard
+              key={instalador.id}
+              installer={instalador}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          ))
+        )}
+      </div>
+    );
+  }
+
+  // Desktop Table View
+  return (
+    <Card className="border">
+      <div className="p-0">
+        <div className="overflow-x-auto">
+          <div className="min-w-full">
+            <div className="border-b bg-muted/30 flex p-4">
+              <div className="flex-1 font-medium text-muted-foreground">Instalador</div>
+              <div className="w-32 font-medium text-muted-foreground">Comissão</div>
+              <div className="w-32 text-right font-medium text-muted-foreground">Ações</div>
+            </div>
+            
+            <div className="divide-y">
+              {loading ? (
+                Array.from({ length: 3 }).map((_, index) => (
+                  <div key={index} className="flex items-center p-4 hover:bg-muted/30">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                        <div>
+                          <Skeleton className="h-4 w-32 mb-2" />
+                          <Skeleton className="h-3 w-48" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="w-32">
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                    <div className="w-32 text-right">
+                      <div className="flex justify-end gap-1">
+                        <Skeleton className="h-8 w-8" />
+                        <Skeleton className="h-8 w-8" />
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : filteredInstaladores.length === 0 ? (
+                <div className="p-8 text-center">
+                  <p className="text-muted-foreground">
+                    {searchTerm ? "Nenhum instalador encontrado" : "Nenhum instalador cadastrado"}
+                  </p>
+                </div>
+              ) : (
+                filteredInstaladores.map((instalador: any) => (
+                  <div key={instalador.id} className="flex items-center p-4 hover:bg-muted/30 border-b">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10 bg-muted">
+                          <AvatarFallback className="text-primary font-medium text-sm">
+                            {getInitials(instalador.nome)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-foreground">{instalador.nome}</p>
+                          <p className="text-sm text-muted-foreground">{instalador.email}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="w-32 text-muted-foreground">
+                      {instalador.comissao ? `${instalador.comissao}%` : "5%"}
+                    </div>
+                    <div className="w-32 text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Editar" onClick={() => handleEdit(instalador)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" title="Excluir" onClick={() => handleDelete(instalador.id, instalador.nome)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export default function Installers() {
   const {
     instaladores,
@@ -68,78 +198,15 @@ export default function Installers() {
         </div>
       </Card>
 
-      {/* Installers Table */}
-      <Card className="border">
-        <div className="p-0">
-          <div className="overflow-x-auto">
-            <div className="min-w-full">
-              <div className="border-b bg-muted/30 flex p-4">
-                <div className="flex-1 font-medium text-muted-foreground">Instalador</div>
-                <div className="w-32 font-medium text-muted-foreground">Comissão</div>
-                <div className="w-32 text-right font-medium text-muted-foreground">Ações</div>
-              </div>
-              
-              <div className="divide-y">
-                {loading ?
-              // Loading skeleton
-              Array.from({
-                length: 3
-              }).map((_, index) => <div key={index} className="flex items-center p-4 hover:bg-muted/30">
-                       <div className="flex-1">
-                         <div className="flex items-center gap-3">
-                           <Skeleton className="h-10 w-10 rounded-full" />
-                           <div>
-                             <Skeleton className="h-4 w-32 mb-2" />
-                             <Skeleton className="h-3 w-48" />
-                           </div>
-                         </div>
-                       </div>
-                       <div className="w-32">
-                         <Skeleton className="h-4 w-24" />
-                       </div>
-                       <div className="w-32 text-right">
-                         <div className="flex justify-end gap-1">
-                           <Skeleton className="h-8 w-8" />
-                           <Skeleton className="h-8 w-8" />
-                         </div>
-                       </div>
-                     </div>) : filteredInstaladores.length === 0 ? <div className="p-8 text-center">
-                    <p className="text-muted-foreground">
-                      {searchTerm ? "Nenhum instalador encontrado" : "Nenhum instalador cadastrado"}
-                    </p>
-                  </div> : filteredInstaladores.map(instalador => <div key={instalador.id} className="flex items-center p-4 hover:bg-muted/30 border-b">
-                       <div className="flex-1">
-                         <div className="flex items-center gap-3">
-                           <Avatar className="h-10 w-10 bg-muted">
-                             <AvatarFallback className="text-primary font-medium text-sm">
-                               {getInitials(instalador.nome)}
-                             </AvatarFallback>
-                           </Avatar>
-                           <div>
-                             <p className="font-medium text-foreground">{instalador.nome}</p>
-                             <p className="text-sm text-muted-foreground">{instalador.email}</p>
-                           </div>
-                         </div>
-                       </div>
-                       <div className="w-32 text-muted-foreground">
-                         {instalador.comissao ? `${instalador.comissao}%` : "5%"}
-                       </div>
-                       <div className="w-32 text-right">
-                         <div className="flex justify-end gap-1">
-                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Editar" onClick={() => handleEdit(instalador)}>
-                             <Edit className="h-4 w-4" />
-                           </Button>
-                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" title="Excluir" onClick={() => handleDelete(instalador.id, instalador.nome)}>
-                             <Trash2 className="h-4 w-4" />
-                           </Button>
-                         </div>
-                       </div>
-                     </div>)}
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
+      {/* Installers Table/Cards */}
+      <InstallersListSection 
+        loading={loading}
+        filteredInstaladores={filteredInstaladores}
+        searchTerm={searchTerm}
+        handleEdit={handleEdit}
+        handleDelete={handleDelete}
+        getInitials={getInitials}
+      />
       
       <InstaladorForm open={showForm} onOpenChange={handleCloseForm} instalador={editingInstallador} />
     </div>;
