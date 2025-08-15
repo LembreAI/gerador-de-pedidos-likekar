@@ -5,67 +5,62 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlusCircle, FileText, Users, Wrench, DollarSign, Menu, X, LogOut, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-
-const allMenuItems = [
-  {
-    id: "novo-pedido",
-    label: "Novo Pedido",
-    icon: PlusCircle,
-    path: "/",
-    requiredRole: null, // Available to all
-  },
-  {
-    id: "pedidos",
-    label: "Pedidos",
-    icon: FileText,
-    path: "/pedidos",
-    requiredRole: null, // Available to all
-  },
-  {
-    id: "clientes",
-    label: "Clientes",
-    icon: Users,
-    path: "/clientes",
-    requiredRole: null, // Available to all
-  },
-  {
-    id: "vendedores",
-    label: "Vendedores",
-    icon: Users,
-    path: "/vendedores",
-    requiredRole: "admin", // Admin only
-  },
-  {
-    id: "instaladores",
-    label: "Instaladores",
-    icon: Wrench,
-    path: "/instaladores",
-    requiredRole: "admin", // Admin only
-  },
-  {
-    id: "comissoes",
-    label: "Comissões",
-    icon: DollarSign,
-    path: "/comissoes",
-    requiredRole: "admin", // Admin only
-  },
-  {
-    id: "usuarios",
-    label: "Central de Usuários",
-    icon: Shield,
-    path: "/usuarios",
-    requiredRole: "admin", // Admin only
-  },
-];
+const allMenuItems = [{
+  id: "novo-pedido",
+  label: "Novo Pedido",
+  icon: PlusCircle,
+  path: "/",
+  requiredRole: null // Available to all
+}, {
+  id: "pedidos",
+  label: "Pedidos",
+  icon: FileText,
+  path: "/pedidos",
+  requiredRole: null // Available to all
+}, {
+  id: "clientes",
+  label: "Clientes",
+  icon: Users,
+  path: "/clientes",
+  requiredRole: null // Available to all
+}, {
+  id: "vendedores",
+  label: "Vendedores",
+  icon: Users,
+  path: "/vendedores",
+  requiredRole: "admin" // Admin only
+}, {
+  id: "instaladores",
+  label: "Instaladores",
+  icon: Wrench,
+  path: "/instaladores",
+  requiredRole: "admin" // Admin only
+}, {
+  id: "comissoes",
+  label: "Comissões",
+  icon: DollarSign,
+  path: "/comissoes",
+  requiredRole: "admin" // Admin only
+}, {
+  id: "usuarios",
+  label: "Central de Usuários",
+  icon: Shield,
+  path: "/usuarios",
+  requiredRole: "admin" // Admin only
+}];
 export function Navbar() {
   const location = useLocation();
-  
+
   // Don't render navbar on auth page
   if (location.pathname === '/auth') {
     return null;
   }
-
-  const { user, signOut, isAdmin, userRole } = useAuth();
+  const {
+    user,
+    signOut,
+    isAdmin,
+    userRole
+  } = useAuth();
 
   // Filter menu items based on user role
   const menuItems = allMenuItems.filter(item => {
@@ -73,7 +68,6 @@ export function Navbar() {
     if (item.requiredRole === "admin") return isAdmin;
     return true;
   });
-
   const getUserInitials = () => {
     if (!user?.email) return "U";
     return user.email.substring(0, 2).toUpperCase();
@@ -104,7 +98,7 @@ export function Navbar() {
   return <>
       {/* Desktop Navbar */}
       <nav className={cn("fixed top-0 left-0 right-0 z-50 bg-white transition-all duration-300", !isMobileOpen && "border-b border-gray-200")}>
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 max-w-full">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 max-w-full my-[2px]">
           {/* Logo and Brand */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div className="flex items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
