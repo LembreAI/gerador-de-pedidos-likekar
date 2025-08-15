@@ -23,7 +23,7 @@ export function LightLogin({
   onToggleShowPassword,
   onSubmit
 }: LightLoginProps) {
-  return <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(var(--muted))] to-[hsl(var(--background))] p-4 sm:p-6">
+  return <main className="min-h-screen flex items-center justify-center bg-white p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-sm sm:max-w-md bg-card rounded-2xl shadow-xl overflow-hidden border border-border relative">
         <div className="absolute top-0 left-0 right-0 h-48 bg-gradient-to-b from-[hsl(var(--primary))/0.15] via-[hsl(var(--primary))/0.08] to-transparent opacity-60 blur-3xl -mt-20 pointer-events-none" />
         <div className="p-6 sm:p-8">
