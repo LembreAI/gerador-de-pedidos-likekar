@@ -153,59 +153,60 @@ export default function ClientDetails() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-4 sm:py-8 max-w-6xl">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-        <div className="flex items-start gap-4">
+    <div className="space-y-6">
+      {/* Modern Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
           <Button 
             variant="ghost" 
             size="sm"
             onClick={() => navigate('/clientes')}
-            className="flex items-center gap-2 mt-1"
+            className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </Button>
-          <div className="min-w-0 flex-1">
-            <h1 className="text-2xl sm:text-3xl font-bold break-words flex items-center gap-3">
-              {client.nome}
-              <Badge variant="secondary" className="text-xs sm:text-sm">
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">{client.nome}</h1>
+            <p className="text-muted-foreground flex items-center gap-4 mt-1">
+              <span className="flex items-center gap-1">
+                <Phone className="h-4 w-4" />
+                {client.telefone}
+              </span>
+              <span className="flex items-center gap-1">
+                <Car className="h-4 w-4" />
                 {vehicles.length} {vehicles.length === 1 ? 'veículo' : 'veículos'}
-              </Badge>
-            </h1>
-            <div className="flex items-center gap-2 mt-1">
-              <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <p className="text-base sm:text-lg text-muted-foreground">{client.telefone}</p>
-            </div>
+              </span>
+            </p>
           </div>
         </div>
-        <div className="flex gap-2 flex-shrink-0">
+        <div className="flex gap-2">
           <Button 
             onClick={() => navigate(`/cliente/${id}/editar`)} 
-            className="bg-amber-500 hover:bg-amber-600 flex-1 sm:flex-none"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Edit className="h-4 w-4 mr-2" />
             Editar
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="flex-1 sm:flex-none">
+              <Button variant="destructive">
                 <Trash2 className="h-4 w-4 mr-2" />
                 Excluir
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="mx-4 max-w-sm sm:max-w-lg">
+            <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
                 <AlertDialogDescription>
                   Tem certeza que deseja excluir o cliente {client.nome}? Esta ação não pode ser desfeita e todos os dados relacionados serão removidos.
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
                 <AlertDialogAction 
                   onClick={handleDeleteClient} 
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto"
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
                   Excluir
                 </AlertDialogAction>
@@ -215,140 +216,143 @@ export default function ClientDetails() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* Dados Pessoais */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Dados Pessoais - Card Principal */}
         <div className="lg:col-span-2">
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <User className="h-5 w-5 flex-shrink-0" />
+          <Card className="border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
                 Dados Pessoais
               </CardTitle>
-              <CardDescription className="text-sm">
+              <CardDescription>
                 Informações básicas do cliente
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 sm:space-y-6">
-              <div className="grid grid-cols-1 gap-4 sm:gap-6">
-                {/* CPF/CNPJ */}
-                {client.cpf_cnpj && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-primary flex-shrink-0" />
-                      <Label className="font-medium text-sm sm:text-base">CPF/CNPJ</Label>
-                    </div>
-                    <p className="text-base sm:text-lg font-mono bg-muted p-3 rounded-md break-all">
-                      {client.cpf_cnpj}
-                    </p>
+            <CardContent className="space-y-6">
+              {/* Grid de Informações Pessoais */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Telefone */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-primary" />
+                    <Label className="font-medium">Telefone</Label>
                   </div>
-                )}
+                  <div className="bg-muted/30 p-3 rounded-md">
+                    <p className="font-medium">{client.telefone}</p>
+                  </div>
+                </div>
 
                 {/* Email */}
                 {client.email && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-primary flex-shrink-0" />
-                      <Label className="font-medium text-sm sm:text-base">E-mail</Label>
+                      <Mail className="h-4 w-4 text-primary" />
+                      <Label className="font-medium">E-mail</Label>
                     </div>
-                    <p className="text-base sm:text-lg bg-muted p-3 rounded-md break-all">
-                      {client.email}
-                    </p>
+                    <div className="bg-muted/30 p-3 rounded-md">
+                      <p className="font-medium break-all">{client.email}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* CPF/CNPJ */}
+                {client.cpf_cnpj && (
+                  <div className="space-y-2 md:col-span-2">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-primary" />
+                      <Label className="font-medium">CPF/CNPJ</Label>
+                    </div>
+                    <div className="bg-muted/30 p-3 rounded-md">
+                      <p className="font-mono font-medium break-all">{client.cpf_cnpj}</p>
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Endereço */}
+              {/* Endereço - Seção Separada */}
               {client.endereco && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
-                    <Label className="font-medium text-sm sm:text-base">Endereço</Label>
+                <>
+                  <Separator />
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      <Label className="font-medium">Endereço</Label>
+                    </div>
+                    <div className="bg-muted/30 p-4 rounded-md">
+                      <p className="leading-relaxed">{client.endereco}</p>
+                    </div>
                   </div>
-                  <div className="bg-muted p-3 sm:p-4 rounded-md">
-                    <p className="text-base sm:text-lg leading-relaxed break-words">
-                      {client.endereco}
-                    </p>
-                  </div>
-                </div>
+                </>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Veículos */}
-        <div className="space-y-4 sm:space-y-6">
+        {/* Veículos - Cards Individuais */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Car className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-medium">Veículos</h2>
+          </div>
+          
           {vehicles.length > 0 ? (
-            <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                  <Car className="h-5 w-5 flex-shrink-0" />
-                  Veículos
-                </CardTitle>
-                <CardDescription className="text-sm">
-                  Veículos cadastrados para este cliente
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {vehicles.map((vehicle, index) => (
-                  <div key={vehicle.id} className="space-y-3">
-                    {index > 0 && <Separator />}
-                    
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs break-words">
-                          {vehicle.marca} {vehicle.modelo}
-                        </Badge>
+            vehicles.map((vehicle) => (
+              <Card key={vehicle.id} className="border">
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    {/* Header do Veículo */}
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-primary text-primary-foreground">
+                        {vehicle.marca}
+                      </Badge>
+                      <Badge variant="secondary">
+                        {vehicle.modelo}
+                      </Badge>
+                    </div>
+
+                    {/* Especificações do Veículo */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Ano</span>
+                        <p className="font-medium">{vehicle.ano}</p>
                       </div>
                       
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                      {vehicle.placa && (
                         <div>
-                          <span className="font-medium text-muted-foreground">Ano:</span>
-                          <p className="font-medium">{vehicle.ano}</p>
+                          <span className="text-muted-foreground">Placa</span>
+                          <p className="font-mono font-medium">{vehicle.placa}</p>
                         </div>
-                        {vehicle.placa && (
-                          <div>
-                            <span className="font-medium text-muted-foreground">Placa:</span>
-                            <p className="font-mono font-medium break-all">{vehicle.placa}</p>
+                      )}
+                      
+                      {vehicle.cor && (
+                        <div className="col-span-2">
+                          <div className="flex items-center gap-1">
+                            <Palette className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-muted-foreground">Cor</span>
                           </div>
-                        )}
-                        {vehicle.cor && (
-                          <div className="col-span-1 sm:col-span-2">
-                            <div className="flex items-center gap-2">
-                              <Palette className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                              <span className="font-medium text-muted-foreground">Cor:</span>
-                            </div>
-                            <p className="font-medium break-words">{vehicle.cor}</p>
-                          </div>
-                        )}
-                      </div>
+                          <p className="font-medium">{vehicle.cor}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ))
           ) : (
-            <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                  <Car className="h-5 w-5 flex-shrink-0" />
-                  Veículos
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-4 sm:py-6">
-                  <Car className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-3 sm:mb-4" />
-                  <p className="text-muted-foreground text-sm sm:text-base mb-3">
-                    Nenhum veículo cadastrado
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full sm:w-auto"
-                    onClick={() => navigate(`/cliente/${id}/editar`)}
-                  >
-                    Cadastrar Veículo
-                  </Button>
-                </div>
+            <Card className="border">
+              <CardContent className="p-6 text-center">
+                <Car className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground mb-4">
+                  Nenhum veículo cadastrado
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate(`/cliente/${id}/editar`)}
+                >
+                  Cadastrar Veículo
+                </Button>
               </CardContent>
             </Card>
           )}
