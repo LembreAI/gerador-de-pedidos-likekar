@@ -134,10 +134,10 @@ export function Navbar() {
       {isMobileOpen && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm" onClick={() => setIsMobileOpen(false)} />}
 
       {/* Mobile Menu */}
-      <div className={cn("fixed top-[3.75rem] sm:top-[4.25rem] left-0 right-0 z-40 bg-white border-b border-gray-200 transition-all duration-300 ease-in-out shadow-lg", isMobileOpen ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0")}>
-        <div className="p-4 sm:p-6 space-y-3 max-h-[calc(100vh-4rem)] overflow-y-auto">
+      <div className={cn("fixed top-[3.75rem] sm:top-[4.25rem] left-0 right-0 z-40 bg-background transition-all duration-300 ease-in-out shadow-lg", isMobileOpen ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0")}>
+        <div className="p-4 sm:p-6 space-y-1 max-h-[calc(100vh-4rem)] overflow-y-auto">
           {/* Menu Items */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             {menuItems.map(item => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -149,7 +149,7 @@ export function Navbar() {
           </div>
           
           {/* User Profile Section */}
-          <div className="border-t border-border pt-4 mt-4">
+          <div className="pt-3 mt-3">
             <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/40 hover:bg-muted/60 transition-all duration-200">
               <Avatar className="h-10 w-10 border-2 border-primary/20 flex-shrink-0">
                 <AvatarImage src="" />
